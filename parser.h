@@ -5,7 +5,6 @@
 
 static int debug;    // print the executed instructions
 static int assembly; // print out the assembly and source
-static int token; // current token
 
 // fields of identifier
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
@@ -20,7 +19,6 @@ enum {Global, Local};
 static int *text, // text segment
            *stack;// stack
 static int * old_text; // for dump text segment
-static char *data; // data segment
 static int *idmain;
 
 static char *src, *old_src;  // pointer to source code string;
@@ -28,10 +26,13 @@ static char *src, *old_src;  // pointer to source code string;
 static int poolsize; // default size of text/data/stack
 static int *pc, *bp, *sp, ax, cycle; // virtual machine registers
 
-static int *current_id, // current parsed ID
-    *symbols,    // symbol table
-    line,        // line number of source code
-    token_val;   // value of current token (mainly for number)
+char *data; // data segment
+extern int *current_id; // current parsed ID
+extern int line;       // line number of source code
+extern int token_val;   // value of current token (mainly for number)
+extern int token; // current token
+
+static int  *symbols;   // symbol table
 
 static int basetype;    // the type of a declaration, make it global for convenience
 static int expr_type;   // the type of an expression
@@ -50,22 +51,9 @@ static int index_of_bp; // index of bp pointer on stack
 //TODO ÐÂÔö
 static int* code_start;
 
-static void next();
-static void match(int tk);
-
 static void expression(int level); 
 
 static void statement();
-
-static void function_parameter();
-
-static void function_body();
-
-static void function_declaration(); 
-
-static void global_declaration();
-
-static void program();
 
 static void parse_configuration();
 
@@ -80,8 +68,7 @@ extern int* dependency_inject
     const char* src_code
 );
 
-extern void run_code(int* code_start);
-
 static int* code_start;
+
 #endif 
 

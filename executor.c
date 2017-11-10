@@ -7,7 +7,8 @@
 //虚拟机寄存器
 static int *bp, ax, cycle; 
 static int* stack;
-//
+
+
 int interpreter_init()
 {
     //运行是会需要，该部分只要虚拟机运行就行了
@@ -18,6 +19,7 @@ int interpreter_init()
 
 }
 
+
 void run_code(int* code_start)
 {
    //初始化堆栈
@@ -27,7 +29,7 @@ void run_code(int* code_start)
 
 
 static int eval(int* pc, int* sp) {
-    int op, *tmp;
+    int op, *args;
     cycle = 0;
     while (1) {
         cycle ++;
@@ -40,8 +42,10 @@ static int eval(int* pc, int* sp) {
  
         //加载立即数到寄存器ax中
         if (op == IMM)       {ax = *pc++;}                                     
+
         //加载字符类型数据到ax中,原来ax中保存的是地址
         else if (op == LC)   {ax = *(char *)ax;}                              
+
         //加载整型数据到ax中,原来ax中保存的是地址
         else if (op == LI)   {ax = *(int *)ax;}        
         else if (op == SC)   {ax = *(char *)*sp++ = ax;} 
@@ -74,14 +78,13 @@ static int eval(int* pc, int* sp) {
         else if (op == DIV) ax = *sp++ / ax;
         else if (op == MOD) ax = *sp++ % ax;
 
-
         //提供必要的一些公共函数
         //只要根据相应的op代码执行特定的动作就行了
         else if (op == OPEN) { ax = open((char *)sp[1], sp[0]); }
         else if (op == CLOS) { ax = close(*sp);}
         else if (op == READ) { ax = read(sp[2], (char *)sp[1], *sp);}
         //是不是printf只能处理6个参数
-        else if (op == PRTF) { tmp = sp + pc[1]; ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]); }
+        else if (op == PRTF) { args = sp + pc[1]; ax = printf((char *)args[-1], args[-2], args[-3], args[-4], args[-5], args[-6]); }
         else if (op == MALC) { ax = (int)malloc(*sp);}
         else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
         else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}

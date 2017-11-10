@@ -5,275 +5,7 @@
 
 #include "parser.h"
 #include "executor.h"
-
-
-
-static void next() {
-    char *last_pos;
-    int hash;
-
-    while (token = *src) {
-        ++src;
-
-        if (token == '\n') {
-            if (assembly) {
-                // print compile info
-                printf("%d: %.*s", line, src-old_src, old_src);
-                old_src = src;
-
-                while (old_text < text) {
-                    printf("%8.4s", & "LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,"
-                                      "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
-                                      "OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[*++old_text * 5]);
-
-                    if (*old_text <= ADJ)
-                        printf(" %d\n", *++old_text);
-                    else
-                        printf("\n");
-                }
-            }
-            ++line;
-        }
-
-        else if (token == '#') {
-            // skip macro, because we will not support it
-            while (*src != 0 && *src != '\n') {
-                src++;
-            }
-        }
-        
-
-        //解析标识符
-        else if ((token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || (token == '_')) {
-
-            // parse identifier
-            last_pos = src - 1;
-            hash = token;
-
-            char block_keyword[32];
-            while ((*src >= 'a' && *src <= 'z') || (*src >= 'A' && *src <= 'Z') || (*src >= '0' && *src <= '9') || (*src == '_')) {
-                hash = hash * 147 + *src;
-                src++;
-            }
-           
-
-            // look for existing identifier, linear search
-            // 搜索符号表
-            // 这里默认设置的IdSize即标识符的长度是10，如果两个符号的前面10个是
-            // 相同的，那么就区分不出来了,可以根据实际情况下重新设置其大小
-            current_id = symbols;
-            while (current_id[Token]) {
-                if (current_id[Hash] == hash && !memcmp((char *)current_id[Name], last_pos, src - last_pos)) {
-                    //found one, return
-                    //printf("find token %d\n", current_id[Token]);
-                    token = current_id[Token];
-                    return;
-                }
-                //查找下一个条目
-                current_id = current_id + IdSize;
-            }
-
-            // store new ID
-            current_id[Name] = (int)last_pos;
-            current_id[Hash] = hash;
-            token = current_id[Token] = Id;
-            return;
-        }
-        
-        //TODO 增加浮点字面量，也就是意味着要
-        //如果是字面量的话就计算其数值
-        else if (token >= '0' && token <= '9') {
-            // parse number, three kinds: dec(123) hex(0x123) oct(017)
-            token_val = token - '0';
-            if (token_val > 0) {
-                // dec, starts with [1-9]
-                while (*src >= '0' && *src <= '9') {
-                    token_val = token_val*10 + *src++ - '0';
-                }
-            } else {
-                // starts with number 0
-                if (*src == 'x' || *src == 'X') {
-                    //hex
-                    token = *++src;
-                    while ((token >= '0' && token <= '9') || (token >= 'a' && token <= 'f') || (token >= 'A' && token <= 'F')) {
-                        token_val = token_val * 16 + (token & 15) + (token >= 'A' ? 9 : 0);
-                        token = *++src;
-                    }
-                } else {
-                    // oct
-                    while (*src >= '0' && *src <= '7') {
-                        token_val = token_val*8 + *src++ - '0';
-                    }
-                }
-            }
-
-            token = Num;
-            return;
-        }
-
-
-        else if (token == '/') {
-            if (*src == '/') {
-                // skip comments
-                while (*src != 0 && *src != '\n') {
-                    ++src;
-                }
-            } else {
-                // divide operator
-                token = Div;
-                return;
-            }
-        }
-        else if (token == '"' || token == '\'') {
-            // parse string literal, currently, the only supported escape
-            // character is '\n', store the string literal into data.
-            last_pos = data;
-            while (*src != 0 && *src != token) {
-                token_val = *src++;
-                if (token_val == '\\') {
-                    // escape character
-                    token_val = *src++;
-                    if (token_val == 'n') {
-                        token_val = '\n';
-                    }
-                }
-
-                if (token == '"') {
-                    *data++ = token_val;
-                }
-            }
-
-            src++;
-            // if it is a single character, return Num token
-            if (token == '"') {
-                token_val = (int)last_pos;
-            } else {
-                token = Num;
-            }
-
-            return;
-        }
-        else if (token == '=') {
-            // parse '==' and '='
-            if (*src == '=') {
-                src ++;
-                token = Eq;
-            } else {
-                token = Assign;
-            }
-            return;
-        }
-        else if (token == '+') {
-            // parse '+' and '++'
-            if (*src == '+') {
-                src ++;
-                token = Inc;
-            } else {
-                token = Add;
-            }
-            return;
-        }
-        else if (token == '-') {
-            // parse '-' and '--'
-            if (*src == '-') {
-                src ++;
-                token = Dec;
-            } else {
-                token = Sub;
-            }
-            return;
-        }
-        else if (token == '!') {
-            // parse '!='
-            if (*src == '=') {
-                src++;
-                token = Ne;
-            }
-            return;
-        }
-        else if (token == '<') {
-            // parse '<=', '<<' or '<'
-            if (*src == '=') {
-                src ++;
-                token = Le;
-            } else if (*src == '<') {
-                src ++;
-                token = Shl;
-            } else {
-                token = Lt;
-            }
-            return;
-        }
-        else if (token == '>') {
-            // parse '>=', '>>' or '>'
-            if (*src == '=') {
-                src ++;
-                token = Ge;
-            } else if (*src == '>') {
-                src ++;
-                token = Shr;
-            } else {
-                token = Gt;
-            }
-            return;
-        }
-        else if (token == '|') {
-            // parse '|' or '||'
-            if (*src == '|') {
-                src ++;
-                token = Lor;
-            } else {
-                token = Or;
-            }
-            return;
-        }
-        else if (token == '&') {
-            // parse '&' and '&&'
-            if (*src == '&') {
-                src ++;
-                token = Lan;
-            } else {
-                token = And;
-            }
-            return;
-        }
-        else if (token == '^') {
-            token = Xor;
-            return;
-        }
-        else if (token == '%') {
-            token = Mod;
-            return;
-        }
-        else if (token == '*') {
-            token = Mul;
-            return;
-        }
-        else if (token == '[') {
-            token = Brak;
-            return;
-        }
-        else if (token == '?') {
-            token = Cond;
-            return;
-        }
-        else if (token == '~' || token == ';' || token == '{' || token == '}' || token == '(' || token == ')' || token == ']' || token == ',' || token == ':') {
-            // directly return the character as token;
-            return;
-        }
-    }
-}
-
-
-static void match(int tk) {
-    if (token == tk) {
-        next();
-    } else {
-        printf("%d: expected token: %d\n", line, tk);
-        exit(-1);
-    }
-}
-
+#include "lex.h"
 
 /**
  *
@@ -333,34 +65,7 @@ static void expression(int level) {
 
             expr_type = PTR;
         }
-        else if (token == Sizeof) {
-            // sizeof is actually an unary operator
-            // now only `sizeof(int)`, `sizeof(char)` and `sizeof(*...)` are
-            // supported.
-            match(Sizeof);
-            match('(');
-            expr_type = INT;
 
-            if (token == Int){ 
-                match(Int);
-            } else if (token == Char) {
-                match(Char);
-                expr_type = CHAR;
-            }
-
-            while (token == Mul) {
-                match(Mul);
-                expr_type = expr_type + PTR;
-            }
-
-            match(')');
-
-            // emit code
-            *++text = IMM;
-            *++text = (expr_type == CHAR) ? sizeof(char) : sizeof(int);
-
-            expr_type = INT;
-        }
         else if (token == Id) {
             // there are several type when occurs to Id
             // but this is unit, so it can only be
@@ -881,15 +586,8 @@ static void expression(int level) {
 
 
 static void statement() {
-    // there are 8 kinds of statements here:
-    // 1. if (...) <statement> [else <statement>]
-    // 2. while (...) <statement>
-    // 3. { <statement> }
-    // 4. return xxx;
-    // 5. <empty statement>;
-    // 6. expression; (expression end with semicolon)
 
-    int *a, *b; // bess for branch control
+    int *a, *b; 
 
     if (token == If) {
         // 为if语句产生的汇编代码，不像gcc等正规编译器会进行一系列的优化操作
@@ -955,16 +653,6 @@ static void statement() {
         *b = (int)(text + 1); //b开始存放其它命令
     }
 
-    else if (token == '{') {
-        // { <statement> ... }
-        match('{');
-
-        while (token != '}') {
-            statement();
-        }
-
-        match('}');
-    }
 
     else if (token == Return) {
         // return [expression];
@@ -993,180 +681,6 @@ static void statement() {
     }
 }
 
-/*
-void enum_declaration() {
-    // parse enum [id] { a = 1, b = 3, ...}
-    int i;
-    i = 0;
-    while (token != '}') {
-        if (token != Id) {
-            printf("%d: bad enum identifier %d\n", line, token);
-            exit(-1);
-        }
-        next();
-        if (token == Assign) {
-            // like {a=10}
-            next();
-            if (token != Num) {
-                printf("%d: bad enum initializer\n", line);
-                exit(-1);
-            }
-
-            i = token_val;
-            next();
-        }
-
-        current_id[Class] = Num;
-        current_id[Type] = INT;
-        current_id[Value] = i++;
-
-        if (token == ',') {
-            next();
-        }
-    }
-}*/
-
-
-static void function_parameter() {
-    int type;
-    int params;
-    params = 0;
-    while (token != ')') {
-        // int name, ...
-        type = INT;
-        if (token == Int) {
-            match(Int);
-        } else if (token == Char) {
-            type = CHAR;
-            match(Char);
-        }
-
-        // pointer type
-        while (token == Mul) {
-            match(Mul);
-            type = type + PTR;
-        }
-
-        // parameter name
-        if (token != Id) {
-            printf("%d: bad parameter declaration\n", line);
-            exit(-1);
-        }
-        if (current_id[Class] == Loc) {
-            printf("%d: duplicate parameter declaration\n", line);
-            exit(-1);
-        }
-
-        match(Id);
-        // store the local variable
-        current_id[BClass] = current_id[Class]; current_id[Class]  = Loc;
-        current_id[BType]  = current_id[Type];  current_id[Type]   = type;
-        current_id[BValue] = current_id[Value]; current_id[Value]  = params++;   // index of current parameter
-
-        if (token == ',') {
-            match(',');
-        }
-    }
-    index_of_bp = params+1;
-}
-
-static void function_body() {
-    match('}');
-    // type func_name (...) {...}
-    //                   -->|   |<--
-
-    // 声明一定要在语句前面
-    // ... {
-    // 1. local declarations
-    // 2. statements
-    // }
-
-    int pos_local; // position of local variables on the stack.
-    int type;
-    pos_local = index_of_bp;
-
-    //解析本地变量声明
-    while (token == Int || token == Char) {
-        // local variable declaration, just like global ones.
-        basetype = (token == Int) ? INT : CHAR;
-        match(token);
-
-        while (token != ';') {
-            type = basetype;
-            //指针类型， 可以是多级指针
-            while (token == Mul) {
-                match(Mul);
-                type = type + PTR;
-            }
-
-            //之后是符号
-            if (token != Id) {
-                // invalid declaration
-                printf("%d: bad local declaration\n", line);
-                exit(-1);
-            }
-
-            //检查是否重复声明
-            if (current_id[Class] == Loc) {
-                // identifier exists
-                printf("%d: duplicate local declaration\n", line);
-                exit(-1);
-            }
-            match(Id);
-
-
-            // store the local variable
-            current_id[BClass] = current_id[Class]; current_id[Class]  = Loc;
-            current_id[BType]  = current_id[Type];  current_id[Type]   = type;
-            current_id[BValue] = current_id[Value]; current_id[Value]  = ++pos_local;   // index of current parameter
-
-            if (token == ',') {
-                match(',');
-            }
-        }
-        match(';');
-    }
-
-    // save the stack size for local variables
-    // ENT enter
-    *++text = ENT;
-    *++text = pos_local - index_of_bp;
-
-    //开始解析语句
-    // statements
-    while (token != '}') {
-        statement();
-    }
-
-    // emit code for leaving the sub function
-    // LEV leave
-    *++text = LEV;
-}
-
-
-static void function_declaration() {
-    // type func_name (...) {...}
-    //               | this part
-
-    match('(');
-    function_parameter();
-    match(')');
-    match('{');
-    function_body();
-    //match('}');
-
-
-    // unwind local variable declarations for all local variables.
-    current_id = symbols;
-    while (current_id[Token]) {
-        if (current_id[Class] == Loc) {
-            current_id[Class] = current_id[BClass];
-            current_id[Type]  = current_id[BType];
-            current_id[Value] = current_id[BValue];
-        }
-        current_id = current_id + IdSize;
-    }
-}
 
 
 static void global_declaration() {
@@ -1177,25 +691,6 @@ static void global_declaration() {
     int i; // tmp 
 
     basetype = INT;
-
-    /*
-    // parse enum, this should be treated alone.
-    if (token == Enum) {
-        // enum [id] { a = 10, b = 20, ... }
-        match(Enum);
-        if (token != '{') {
-            match(Id); // skip the [id] part
-        }
-        if (token == '{') {
-            // parse the assign part
-            match('{');
-            enum_declaration();
-            match('}');
-        }
-
-        match(';');
-        return;
-    }*/
 
     // parse type information
     if (token == Int) {
@@ -1232,13 +727,8 @@ static void global_declaration() {
         //设置了Type和Value，等程序后面引用的时候就能正确加载
         current_id[Type] = type;
 
-        if (token == '(') {
-            current_id[Class] = Fun;
-            //函数的地址
-            current_id[Value] = (int)(text + 1); // the memory address of function
-            function_declaration();
 
-        }else if(token == Brak){
+        if(token == Brak){
             //TODO 新增支持数组声明, 数组下标要是整数      
             static int* addr_keeper;
             next();
@@ -1332,18 +822,6 @@ static void global_declaration() {
     next();
 }
 
-//在文件级别上解析程序
-//全局变量和函数声明
-static void program() {
-    // get next token
-    next();
-    while (token > 0) {
-        printf("token %d golbal decalration\n", token);
-        global_declaration();
-    }
-}
-
-
 static void parse_configuration()
 { 
     char* token_name;
@@ -1431,6 +909,8 @@ static  void init_symbol_table()
     src = "char else enum if int return sizeof while "
           "open read close printf malloc memset memcmp exit void";
 
+    prepare_for_tokenize(src, symbols);
+
     int i;
     //关键字
     // add keywords to symbol table
@@ -1471,6 +951,7 @@ int* dependency_inject
 
    init_symbol_table();
 
+   prepare_for_tokenize(sym, symbols);
    //目前只处理一个符号的导入
    src = sym;
    next();
@@ -1484,7 +965,7 @@ int* dependency_inject
    code_start = text + 1;
    
    //解析源代码
-   src = (char* )src_code;
+   prepare_for_tokenize(src_code, symbols);
    parse_configuration();
 
    //手动添加退出代码
