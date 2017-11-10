@@ -1,22 +1,11 @@
-#ifndef XC_H
-#define XC_H
+#ifndef PARSER_H
+#define PARSER_H
+
+#include "symbol.h"
 
 static int debug;    // print the executed instructions
 static int assembly; // print out the assembly and source
 static int token; // current token
-
-// instructions
-enum { LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,
-       OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
-       OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT };
-
-// tokens and classes (operators last and in precedence order)
-// copied from c4
-enum {
-  Num = 128, Fun, Sys, Glo, Loc, Id,
-  Char, Else, Enum, If, Int, Return, Sizeof, While,
-  Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt, Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
-};
 
 // fields of identifier
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
@@ -79,8 +68,6 @@ static void global_declaration();
 static void program();
 
 static void parse_configuration();
-
-static int eval(); 
 
 extern int init();
 

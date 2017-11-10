@@ -1,9 +1,11 @@
 #include <stdio.h>
-#include "interpreter.h"
+#include "parser.h"
+#include "executor.h"
 
 int main()
 {
    init();
+   interpreter_init();
    int test_extern;
    char* src;
    char* dependency;
@@ -23,7 +25,7 @@ int main()
    run_code(code1);
 
 
-   src = "use{;} action{test_extern = 100;}";
+   src = "use{;} action{test_extern = 100 - 1;}";
    dependency = "test_extern";
    code2 = dependency_inject(dependency, &test_extern, src);
    run_code(code2);

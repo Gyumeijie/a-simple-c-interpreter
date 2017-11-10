@@ -3,7 +3,8 @@
 #include <memory.h>
 #include <string.h>
 
-#include "interpreter.h"
+#include "parser.h"
+#include "executor.h"
 
 
 
@@ -302,6 +303,7 @@ static void expression(int level) {
             printf("%d: unexpected token EOF of expression\n", line);
             exit(-1);
         }
+
         if (token == Num) {
             match(Num);
 
@@ -339,7 +341,7 @@ static void expression(int level) {
             match('(');
             expr_type = INT;
 
-            if (token == Int) {
+            if (token == Int){ 
                 match(Int);
             } else if (token == Char) {
                 match(Char);
@@ -359,8 +361,6 @@ static void expression(int level) {
 
             expr_type = INT;
         }
-
-        //处理标识符，即主要处理标识符对应的[id]Value
         else if (token == Id) {
             // there are several type when occurs to Id
             // but this is unit, so it can only be
@@ -428,7 +428,6 @@ static void expression(int level) {
                 }
                 else if (id[Class] == Glo) {
                     *++text = IMM;                
-                    //TODO 这里的时候就需要注册一个重定向的表项
                     *++text = id[Value]; //id[Value]都是保存其地址
                 }
                 else {
@@ -579,9 +578,6 @@ static void expression(int level) {
             printf("%d: bad expression\n", line);
             exit(-1);
         }
-        
-        //TODO 添加对continue以及break语句的处理
-
     }
 
  
@@ -915,7 +911,7 @@ static void statement() {
 
         // emit code for if
         *++text = JZ;
-        b = ++text; //先为标号b分配一个地址空间
+        b = ++text;
 
         statement();         // parse statement
         if (token == Else) { // parse else
@@ -929,12 +925,10 @@ static void statement() {
             statement();
         }
 
-        //编译完后在填充标号b的内容
         *b = (int)(text + 1);
     }
 
 
-    //TODO 实现break, continue
     else if (token == While) {
         //
         // a:                     a:
@@ -951,26 +945,16 @@ static void statement() {
         expression(Assign);
         match(')');
 
-        *++text = JZ; //先为标号b分配一个地址空间
-        b = ++text;    
-
-        //TODO 将两个标号打包压入堆栈中（主要是为了while循环）
-        //如果堆栈为空的时候，即此时的环境不是在while循环中，那么报错
-        //start_label1: ,  end_label2: 
-        //start_label2: ,  end_label2: 
+        *++text = JZ;
+        b = ++text;
 
         statement();
 
-        //相当于continue
         *++text = JMP;
         *++text = (int)a;
-
-        //相当于break
-        //编译完后在填充标号b的内容, b开始存放其它命令
-        *b = (int)(text + 1); 
+        *b = (int)(text + 1); //b开始存放其它命令
     }
 
-    
     else if (token == '{') {
         // { <statement> ... }
         match('{');
@@ -1320,14 +1304,9 @@ static void global_declaration() {
             }
 
         }else {
-            current_id[Class] = Glo; 
+
             //TODO 根据变量的类型不同分配不同大小空间的
-            //text段中的变量的地址在重定位的时候需要都需要改变
-            //在将变量的地址赋值给需要注意的是外部导入的符号其地址在
-            //text段中是不需要修改的，因此需要一个区分这种变量的机制
-            //作为一种选择导入外部符号的时候将curren_id[class] 设置为Impt
-            //那么在进行 *++text = current_id[Value]的时候同时注册一个重定向的
-            //表项，等待重定向的时候利用这些收集的数据
+            current_id[Class] = Glo; 
             current_id[Value] = (int)data; 
            
             //新增的代码支持初始化
@@ -1401,87 +1380,6 @@ static void parse_configuration()
 
 }
 
-
-static int eval() {
-    int op, *tmp;
-    cycle = 0;
-    while (1) {
-        cycle ++;
-        //TODO 在有main函数的时候是从main函数开始执行的，如果要去掉main函数的化
-        //就要正确设置pc否则就会内存错误
-        op = *pc++; 
-
-        //TODO 使用switch 减少无效的if/else判断，因为在调试的时候发现要查找某个
-        //op的时候 如果op很后面那么前面就需要进行很多的if/else的条件判断
- 
-        if (op == IMM)       {ax = *pc++;}                                     // load immediate value to ax
-        else if (op == LC)   {ax = *(char *)ax;}                               // load character to ax, address in ax
-        else if (op == LI)   {ax = *(int *)ax;}                                // load integer to ax, address in ax
-        else if (op == SC)   {ax = *(char *)*sp++ = ax;}                       // save character to address, value in ax, address on stack
-        else if (op == SI)   {*(int *)*sp++ = ax;}                             // save integer to address, value in ax, address on stack
-        //堆栈是往下生长的
-        else if (op == PUSH) {*--sp = ax;}                                     // push the value of ax onto the stack
-        else if (op == JMP)  {pc = (int *)*pc;}                                // jump to the address
-        else if (op == JZ)   {pc = ax ? pc + 1 : (int *)*pc;}                   // jump if ax is zero
-        else if (op == JNZ)  {pc = ax ? (int *)*pc : pc + 1;}                   // jump if ax is zero
-        else if (op == CALL) {*--sp = (int)(pc+1); pc = (int *)*pc;}           // call subroutine
-        //else if (op == RET)  {pc = (int *)*sp++;}                              // return from subroutine;
-        else if (op == ENT)  {*--sp = (int)bp; bp = sp; sp = sp - *pc++;}      // make new stack frame
-        else if (op == ADJ)  {sp = sp + *pc++;}                                // add esp, <size>
-        else if (op == LEV)  {sp = bp; bp = (int *)*sp++; pc = (int *)*sp++;}  // restore call frame and PC
-        else if (op == LEA)  {ax = (int)(bp + *pc++);}                         // load address for arguments.
-
-        else if (op == OR)  ax = *sp++ | ax;
-        else if (op == XOR) ax = *sp++ ^ ax;
-        else if (op == AND) ax = *sp++ & ax;
-        else if (op == EQ)  ax = *sp++ == ax;
-        else if (op == NE)  ax = *sp++ != ax;
-        else if (op == LT)  ax = *sp++ < ax;
-        else if (op == LE)  ax = *sp++ <= ax;
-        else if (op == GT)  ax = *sp++ >  ax;
-        else if (op == GE)  ax = *sp++ >= ax;
-        else if (op == SHL) ax = *sp++ << ax;
-        else if (op == SHR) ax = *sp++ >> ax;
-        else if (op == ADD) ax = *sp++ + ax;
-        else if (op == SUB) ax = *sp++ - ax;
-        else if (op == MUL) ax = *sp++ * ax;
-        else if (op == DIV) ax = *sp++ / ax;
-        else if (op == MOD) ax = *sp++ % ax;
-
-
-        //提供必要的一些公共函数
-        //只要根据相应的op代码执行特定的动作就行了
-        else if (op == OPEN) { ax = open((char *)sp[1], sp[0]); }
-        else if (op == CLOS) { ax = close(*sp);}
-        else if (op == READ) { ax = read(sp[2], (char *)sp[1], *sp);}
-        //是不是printf只能处理6个参数
-        else if (op == PRTF) { tmp = sp + pc[1]; ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]); }
-        else if (op == MALC) { ax = (int)malloc(*sp);}
-        else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
-        else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
-    
-        //下面的提供私有的函数例程，为了不会因为增加专用的函数例程导致主执行器
-        //的switch变得太大，就将这些私有的移到
-
-        //1xxx xxxx 私有的代码表示方法 
-        // op = PRIV_OP - 128 再调用具体的一个解释器 
-        // private_executor(text, data, op){
-        //     
-        // }
-        
-
-        //唯一退出的代码
-        else if (op == EXIT) { printf("exit(%d)\n", *sp); return *sp;}
-        else {
-            printf("unknown instruction:%d\n", op);
-            return -1;
-        }
-
-    }
-}
-
-
-
 //只初始化一次
 int init()
 {
@@ -1525,7 +1423,7 @@ int init()
 
 
 //每次编译新的代码片段的时候都需要重新设置一下符号表
-static void init_symbol_table()
+static  void init_symbol_table()
 {
     //有专门的符号表
     memset(symbols, 0, poolsize);
@@ -1551,8 +1449,6 @@ static void init_symbol_table()
         next();
         current_id[Class] = Sys;
         current_id[Type] = INT;
-
-        //这种符号在重定位的时候也是不需要重新计算的, 因为不涉及到data数据段
         current_id[Value] = i++;
         //为什么不设置Token的值
         //这些是标识符其token号为133
@@ -1582,8 +1478,6 @@ int* dependency_inject
    //手动设置符号表，进行外部符号导入工作     
    current_id[Class] = Glo;
    current_id[Type] = INT;
-
-   //外部导入的参数，其在重定位的时候也是忽略的，因为其不在data数据段
    current_id[Value] = (int)extern_addr;
         
    //设置代码的起始地址
@@ -1600,18 +1494,6 @@ int* dependency_inject
 }
 
 
-void run_code(int* code_start)
-{
-   //设置pc的值
-   pc = code_start;
-
-   //初始化堆栈
-   sp = (int *)((int)stack + poolsize);
-   eval();
-}
-
-
-
 //计算text和data段的长度
 //为后面的重定位进行准备
 static int actual_text_len, text_start;
@@ -1622,13 +1504,4 @@ int get_text_and_data_length()
     actual_data_len = data_start - (int)data;
 
     //进行字节边界对齐
-}
-
-
-//TODO 重定位，主要是针对数据部分进行的一个数据重新地位的一个过程
-//数据段直接拷贝, 代码段先拷贝后再修改(或者先修改再拷贝)
-int relocation()
-{
-
-
 }
