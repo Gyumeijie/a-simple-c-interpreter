@@ -10,22 +10,23 @@ int main()
    char* src;
    char* dependency;
 
-   src = "use{int i = 1;} action{printf(\" test_extern is  %d\n\", test_extern + i);}";
+   
+   src = "use{int i = 1; int j = 1;} action{printf(\"test_extern is  %d\n\", test_extern + i + j);}";
    dependency = "test_extern";
    int* code1 = dependency_inject(dependency, &test_extern, src);
 
-   src = "use{int i = 2;} action{printf(\" test_extern is  %d\n\", test_extern + i);}";
+   test_extern = 34;
+   run_code(code1);
+
+   src = "use{int i = 2; int k = 3;} action{printf(\"test_extern is %d\n\", test_extern + i*k);}";
    dependency = "test_extern";
    int* code2 = dependency_inject(dependency, &test_extern, src);
 
    test_extern = 35;
    run_code(code2);
 
-   test_extern = 34;
-   run_code(code1);
 
-
-   src = "use{;} action{test_extern = 100 - 1;}";
+   src = "use{int i = 3; int j = 4;} action{test_extern = 100 - i + j;}";
    dependency = "test_extern";
    code2 = dependency_inject(dependency, &test_extern, src);
    run_code(code2);

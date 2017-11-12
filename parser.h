@@ -16,6 +16,10 @@ enum { CHAR, INT, PTR };
 // type of declaration.
 enum {Global, Local};
 
+static int actual_text_len, *text_start;
+static int actual_data_len; 
+static char *data_start;
+
 static int *text, // text segment
            *stack;// stack
 static int * old_text; // for dump text segment
@@ -58,6 +62,8 @@ static void statement();
 static void parse_configuration();
 
 extern int init();
+
+static int* relocation();
 
 static  void init_symbol_table();
 

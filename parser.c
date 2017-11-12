@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "executor.h"
 #include "lex.h"
+#include "relocation.h"
 
 /**
  *
@@ -61,6 +62,7 @@ static void expression(int level) {
 
             // append the end of string character '\0', all the data are default
             // to 0, so just move data one position forward.
+            //字符串常量不需要重定位
             data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
 
             expr_type = PTR;
@@ -127,13 +129,14 @@ static void expression(int level) {
 
                 // 处理变量
                 // TODO 如果只支持全局作用域的话这个可以删掉
-                if (id[Class] == Loc) {
-                    *++text = LEA;
-                    *++text = index_of_bp - id[Value]; //存放在*pc++
+                if (id[Class] == Ext) {
+                    *++text = IMM;                
+                    *++text = id[Value]; //id[Value]都是保存其地址
                 }
                 else if (id[Class] == Glo) {
                     *++text = IMM;                
                     *++text = id[Value]; //id[Value]都是保存其地址
+                    add_relocation_item(text, (id[Value] - (int)data_start));                    
                 }
                 else {
                     printf("%d: undefined variable\n", line);
@@ -874,11 +877,16 @@ int init()
         printf("could not malloc(%d) for text area\n", poolsize);
         return -1;
     }
+    text_start = text;
+    //printf("old code start %p\n", text_start);
     
     if (!(data = malloc(poolsize))) {
         printf("could not malloc(%d) for data area\n", poolsize);
         return -1;
     }
+    data_start = data;
+    //printf("old data start %p\n", data_start);
+
 
     //运行是会需要，该部分只要虚拟机运行就行了
     if (!(stack = malloc(poolsize))) {
@@ -957,7 +965,7 @@ int* dependency_inject
    next();
 
    //手动设置符号表，进行外部符号导入工作     
-   current_id[Class] = Glo;
+   current_id[Class] = Ext;
    current_id[Type] = INT;
    current_id[Value] = (int)extern_addr;
         
@@ -971,18 +979,56 @@ int* dependency_inject
    //手动添加退出代码
    *++text = EXIT;
 
-   return code_start;
+   return relocation();
+
+   //return code_start;
+}
+
+void dump_text(int* text, int len)
+{
+    int i;
+    printf("dumping text\n");
+    for (i=0; i<len-1; i++) {
+       printf("%0x ", text[i]);
+    }
+    
+       printf("%0x\n", text[i]);
 }
 
 
 //计算text和data段的长度
 //为后面的重定位进行准备
-static int actual_text_len, text_start;
-static int actual_data_len, data_start;
-int get_text_and_data_length()
+int* relocation()
 {
-    actual_text_len = text_start - (int)text;
-    actual_data_len = data_start - (int)data;
+    actual_text_len = text - text_start + 1;
+    actual_data_len = data - data_start + 1;
 
     //进行字节边界对齐
+    //printf("actual_text_len %d\n", actual_text_len);
+    //printf("actual_data_len %d\n", actual_data_len);
+    
+    //注意text是int为单位的，data是char为单位的
+    int* new_text = malloc(actual_text_len*sizeof(int));
+    char* new_data = malloc(actual_data_len*sizeof(char));
+    memset(new_text, 0, actual_text_len);
+    memset(new_data, 0, actual_data_len);
+    //printf("new_text %p, new_data %p\n", new_text, new_data);
+    //dump_text((int*)text_start, actual_text_len);
+
+    memcpy(new_data, (void*)data_start, actual_data_len);
+    
+    do_relocation(new_data);
+
+    memcpy(new_text, (void*)text_start, actual_text_len*sizeof(int));
+    //dump_text((int*)new_text, actual_text_len);
+
+    //重置
+    memset(text, 0, poolsize);
+    memset(data, 0, poolsize);
+    data = (char*)data_start;
+    text = (int*)text_start;
+    
+    return new_text + 1;
 }
+
+

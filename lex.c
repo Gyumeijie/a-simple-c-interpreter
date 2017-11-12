@@ -131,6 +131,7 @@ void next() {
             // parse string literal, currently, the only supported escape
             // character is '\n', store the string literal into data.
             last_pos = data;
+            //´æÈ¡×Ö·û×ÖÃæÁ¿
             while (*src != 0 && *src != token) {
                 token_val = *src++;
                 if (token_val == '\\') {

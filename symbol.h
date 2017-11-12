@@ -12,7 +12,7 @@ enum{
 
 // 标记 
 enum {
-   Num = 128, Fun, Sys, Glo, Loc, Id,
+   Num = 128, Fun, Sys, Glo, Ext, Id,
    Char, Else, Enum, If, Int, Return, Sizeof, While,
    //TODO 将操作符单独分出去
    Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
