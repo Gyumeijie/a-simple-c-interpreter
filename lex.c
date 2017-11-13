@@ -83,15 +83,17 @@ void next() {
         }
         
         //如果是字面量的话就计算其数值
+        //对于浮点数暂时不支持如0001.xxx的浮点数形式
         else if (token >= '0' && token <= '9') {
             //保存浮点数字面量，之后用转换函数进行转换
             char float_string[32];
-            const char* string_begin = src - 1;
+            const char* string_begin = src;
 
             token_val = token - '0';
             if (token_val > 0) {
                 float_string[0] = token;
                 int idx = 1;
+
                 // 十进制
                 while (*src >= '0' && *src <= '9') {
                     token_val = token_val*10 + *src++ - '0';
@@ -102,7 +104,7 @@ void next() {
                     memcpy(&float_string[1], string_begin, src - string_begin);
                     idx = idx + src - string_begin;
                     float_string[idx] = '.';
-
+                    
                     process_fraction(float_string, idx + 1);
 
                     token_val = (int)strtod(float_string, NULL);
@@ -143,6 +145,17 @@ void next() {
             return;
         }
 
+        else if (token == '.'){
+           //处理.xxxxx形式的浮点数
+           char float_string[32];
+           float_string[0] = '.';
+           process_fraction(float_string, 1);
+         
+           token_val = (int)strtod(float_string, NULL);
+           token = Num;
+           return;
+        }
+
         else if (token == '/') {
             if (*src == '/') {
                 //跳过注释 
@@ -154,37 +167,58 @@ void next() {
                 return;
             }
         }
-        else if (token == '"' || token == '\'') {
-            // parse string literal, currently, the only supported escape
-            // character is '\n', store the string literal into data.
+
+        else if (token == '"') {
+            // 解析字符串常量，目前只支持转义字符'\n', 字符串常量的值存放在data
+            // 段
             last_pos = data;
 
             //存取字符字面量
             while (*src != 0 && *src != token) {
                 token_val = *src++;
+                // 处理字符串中的转义字符
                 if (token_val == '\\') {
-                    // 转义字符
                     token_val = *src++;
                     if (token_val == 'n') {
                         token_val = '\n';
                     }
                 }
 
-                if (token == '"') {
-                    *data++ = token_val;
-                }
+                //存放字符串常量中的字符
+                *data++ = token_val;
             }
 
             src++;
-            // if it is a single character, return Num token
-            if (token == '"') {
-                token_val = (int)last_pos;
-            } else {
-                token = Num;
-            }
+            token_val = (int)last_pos;
 
             return;
         }
+
+        else if (token == '\''){
+            token_val = *src++;
+        
+            //处理单引号中的转义字符
+            if (token_val == '\\'){
+                token_val = *src++;
+                if (token_val == 'n') {
+                     token_val = '\n';
+                }
+            }
+
+            //单引号中只能有一个转义字符（两个字符）和一个非转义字符,如果还有其
+            //它的字符则报错
+            if (*src != '\''){
+               printf("%d: bad char value\n", line);
+               exit(-1);
+            }
+
+            src++;
+            // 如'c', 就返回Num，token_val以赋值为相应的ascii
+            token = Num; 
+
+            return;
+        }
+
         else if (token == '=') {
             // 解析 '==' 和 '='
             if (*src == '=') {
@@ -301,6 +335,9 @@ void next() {
             // directly return the character as token;
             return;
         }
+        else{
+           //其它情况忽略
+        }
     }
 }
 
@@ -355,18 +392,19 @@ static void process_fraction(char* float_string, int start_idx)
        token = *++src;
    }
         
-   //判断是否是非法的浮点数字面量
-   printf("trailing charater of float literal '%c'\n", token);
+   //判断是否是非法的浮点数字面量，处理完正常部分的浮点数后如果后面不是这些字符
+   //的话，那么这个浮点字面量是非法的，同时也能处理上面出现非法字符的情况，例如
+   //"12.0a" 这样的字面量
+   //printf("trailing charater of float literal '%c'\n", token);
    if (! (token == ',' || token == ';' || token == ' ')){
-       printf("bad float literal\n");
+       printf("%d: bad float literal\n", line);
        exit(-1);
     }
 
     float_string[idx] = '\0';
     printf("float val:%lf\n", strtod(float_string, NULL));
-
-
 }
+
 
 //将十六进制的字符转化成相应的数字
 static int digitalize_hex_character(char ch)
