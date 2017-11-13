@@ -19,4 +19,6 @@ enum {
    Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };
 
+// 重定位
+enum {Text_Rel, Data_Rel};
 #endif

@@ -90,10 +90,10 @@ static int eval(int* pc, int* sp) {
         else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
     
         //下面的提供私有的函数例程，为了不会因为增加专用的函数例程导致主执行器
-        //的switch变得太大，就将这些私有的移到
+        //的switch变得太大，就将这些私有的移到专门的执行器中
 
         //1xxx xxxx 私有的代码表示方法 
-        // op = PRIV_OP - 128 再调用具体的一个解释器 
+        // op = PRIV_OP - 128 再调用具体的一个执行器 
         // private_executor(text, data, op){
         //     
         //

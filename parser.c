@@ -136,7 +136,7 @@ static void expression(int level) {
                 else if (id[Class] == Glo) {
                     *++text = IMM;                
                     *++text = id[Value]; //id[Value]都是保存其地址
-                    add_relocation_item(text, (id[Value] - (int)data_start));                    
+                    add_relocation_item(text, (id[Value] - (int)data_start), Data_Rel);                    
                 }
                 else {
                     printf("%d: undefined variable\n", line);
@@ -595,41 +595,54 @@ static void statement() {
     if (token == If) {
         // 为if语句产生的汇编代码，不像gcc等正规编译器会进行一系列的优化操作
         // if (...) <statement> [else <statement>]
-        //
-        //   if (...)           <cond>
-        //                      JZ a
+        //                     //按照顺序来
+        //   if (...)           <cond>  
+        //                      JZ a    
         //     <statement>      <statement>
-        //   else:              JMP b
+        //   else:              JMP b //跳过else部分
         // a:
         //     <statement>      <statement>
         // b:                   b:
         //
-        //
+        
         match(If);
         match('(');
-        expression(Assign);  // parse condition
+        //解析条件
+        expression(Assign);  
         match(')');
 
-        // emit code for if
         *++text = JZ;
-        b = ++text;
+        b = ++text; //先为标号b分配一个地址空间
 
-        statement();         // parse statement
-        if (token == Else) { // parse else
+        //解析if中的语句
+        statement(); //跳过这些细节     
+
+        int offset;
+        //解析else部分
+        if (token == Else) { 
+            //match包含了next操作, 如果有else if那么statement()后就会匹配if
             match(Else);
 
             // emit code for JMP B
+            // TODO 这里需要重定位location: b, offset: text+3 - text_start
+            offset = (text + 3 - text_start)*sizeof(int);
+            add_relocation_item(b, offset, Text_Rel);
             *b = (int)(text + 3);
             *++text = JMP;
             b = ++text;
 
-            statement();
+            statement(); //跳过这些细节
         }
 
-        *b = (int)(text + 1);
+
+        // TODO 这里需要重定位location: b, offset: text+1 - text_start
+        offset = (text + 1 - text_start)*sizeof(int);
+        add_relocation_item(b, offset, Text_Rel);
+        *b = (int)(text + 1); //编译完后再填充标号b的内容
     }
 
 
+    //TODO 实现break, continue
     else if (token == While) {
         //
         // a:                     a:
@@ -647,15 +660,45 @@ static void statement() {
         match(')');
 
         *++text = JZ;
-        b = ++text;
+        b = ++text; //先为标号b分配一个地址空间
 
+        //TODO 将两个标号打包压入堆栈中（主要是为了while循环）
+        //如果堆栈为空的时候，即此时的环境不是在while循环中，那么报错
+        //start_label1: ,  end_label2: 
+        //start_label2: ,  end_label2: 
+        
         statement();
 
+        int offset;
+
+        //相当于continue
         *++text = JMP;
+        //TODO 这里需要一个重定位location:text, offset=a - text_start 
         *++text = (int)a;
+        offset = (a - text_start)*sizeof(int);
+        add_relocation_item(text, offset, Text_Rel);
+
+
+        //相当于break
+        //编译完后在填充标号b的内容, b开始存放其它命令
+        //TODO 这里也需要一个重定位location:b, offset=text+1-text_start
+
+        offset = (text + 1 - text_start)*sizeof(int);
+        add_relocation_item(b, offset, Text_Rel);
         *b = (int)(text + 1); //b开始存放其它命令
     }
 
+    //匹配if/while中的语句
+    else if (token == '{') {
+        // { <statement> ... }
+        match('{');
+
+        while (token != '}') {
+            statement();
+        }
+
+        match('}');
+    }
 
     else if (token == Return) {
         // return [expression];
@@ -1013,14 +1056,14 @@ int* relocation()
     memset(new_text, 0, actual_text_len);
     memset(new_data, 0, actual_data_len);
     //printf("new_text %p, new_data %p\n", new_text, new_data);
-    //dump_text((int*)text_start, actual_text_len);
+    dump_text((int*)text_start, actual_text_len);
 
     memcpy(new_data, (void*)data_start, actual_data_len);
     
-    do_relocation(new_data);
+    do_relocation(new_text, new_data);
 
     memcpy(new_text, (void*)text_start, actual_text_len*sizeof(int));
-    //dump_text((int*)new_text, actual_text_len);
+    dump_text((int*)new_text, actual_text_len);
 
     //重置
     memset(text, 0, poolsize);
