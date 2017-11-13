@@ -1,17 +1,18 @@
 #include "lex.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 static const char* src;
 static int  *symbols;
 
-// fields of identifier
+// 标识符的描述信息 
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
-// types of variable/function
+// 变量或者函数类型 
 enum { CHAR, INT, PTR };
 
-// type of declaration.
+//声明类型 
 enum {Global, Local, Extern};
 
 
@@ -39,71 +40,94 @@ void next() {
         }
 
         else if (token == '#') {
-            // skip macro, because we will not support it
+            //跳过宏定义，因为不支持
             while (*src != 0 && *src != '\n') {
                 src++;
             }
         }
         
-
         //解析标识符
-        else if ((token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || (token == '_')) {
+        else if (is_valid_starting_character(token)) {
 
-            // parse identifier
             last_pos = (char*)src - 1;
             hash = token;
 
             char block_keyword[32];
-            while ((*src >= 'a' && *src <= 'z') || (*src >= 'A' && *src <= 'Z') || (*src >= '0' && *src <= '9') || (*src == '_')) {
+            while (is_valid_identifier_character(*src)) {
                 hash = hash * 147 + *src;
                 src++;
             }
            
-
-            // look for existing identifier, linear search
             // 搜索符号表
             // 这里默认设置的IdSize即标识符的长度是10，如果两个符号的前面10个是
             // 相同的，那么就区分不出来了,可以根据实际情况下重新设置其大小
             current_id = symbols;
+            int id_len = src - last_pos;
             while (current_id[Token]) {
-                if (current_id[Hash] == hash && !memcmp((char *)current_id[Name], last_pos, src - last_pos)) {
-                    //found one, return
-                    //printf("find token %d\n", current_id[Token]);
+                if (current_id[Hash] == hash && 
+                    !memcmp((char *)current_id[Name], last_pos, id_len)) {
                     token = current_id[Token];
+
                     return;
                 }
                 //查找下一个条目
                 current_id = current_id + IdSize;
             }
 
-            // store new ID
+            //如果没有找到就在新的symbols表项中创建一个ID条目
             current_id[Name] = (int)last_pos;
             current_id[Hash] = hash;
             token = current_id[Token] = Id;
+
             return;
         }
         
-        //TODO 增加浮点字面量，也就是意味着要
         //如果是字面量的话就计算其数值
         else if (token >= '0' && token <= '9') {
-            // parse number, three kinds: dec(123) hex(0x123) oct(017)
+            //保存浮点数字面量，之后用转换函数进行转换
+            char float_string[32];
+            const char* string_begin = src - 1;
+
             token_val = token - '0';
             if (token_val > 0) {
-                // dec, starts with [1-9]
+                float_string[0] = token;
+                int idx = 1;
+                // 十进制
                 while (*src >= '0' && *src <= '9') {
                     token_val = token_val*10 + *src++ - '0';
                 }
+                
+                //检测是否可能是浮点
+                if (*src == '.'){
+                    memcpy(&float_string[1], string_begin, src - string_begin);
+                    idx = idx + src - string_begin;
+                    float_string[idx] = '.';
+                    process_fraction(float_string, idx + 1);
+                    token_val = (int)strtod(float_string, NULL);
+                }
+
             } else {
-                // starts with number 0
+                // '0'开头的数，八进制或者十六进制或者是小数
                 if (*src == 'x' || *src == 'X') {
-                    //hex
+                    // 十六进制
                     token = *++src;
-                    while ((token >= '0' && token <= '9') || (token >= 'a' && token <= 'f') || (token >= 'A' && token <= 'F')) {
-                        token_val = token_val * 16 + (token & 15) + (token >= 'A' ? 9 : 0);
+                    while ((token >= '0' && token <= '9') || 
+                           (token >= 'a' && token <= 'f') || 
+                           (token >= 'A' && token <= 'F')) {
+                        token_val = token_val*16 + (token&15) + (token >= 'A' ? 9 : 0);
                         token = *++src;
                     }
-                } else {
-                    // oct
+                //TODO 增加浮点运算
+                }else if(*src == '.'){
+                    // 小数0.xxxx 
+                    float_string[0] = '0';
+                    float_string[1] = '.';
+
+                    process_fraction(float_string, 2);
+            
+                    token_val = (int)strtod(float_string, NULL);
+                }else{
+                    // 八进制 
                     while (*src >= '0' && *src <= '7') {
                         token_val = token_val*8 + *src++ - '0';
                     }
@@ -114,15 +138,13 @@ void next() {
             return;
         }
 
-
         else if (token == '/') {
             if (*src == '/') {
-                // skip comments
+                //跳过注释 
                 while (*src != 0 && *src != '\n') {
                     ++src;
                 }
-            } else {
-                // divide operator
+            } else { 
                 token = Div;
                 return;
             }
@@ -158,7 +180,7 @@ void next() {
             return;
         }
         else if (token == '=') {
-            // parse '==' and '='
+            // 解析 '==' 和 '='
             if (*src == '=') {
                 src ++;
                 token = Eq;
@@ -168,7 +190,7 @@ void next() {
             return;
         }
         else if (token == '+') {
-            // parse '+' and '++'
+            // 解析 '+' 和 '++'
             if (*src == '+') {
                 src ++;
                 token = Inc;
@@ -178,7 +200,7 @@ void next() {
             return;
         }
         else if (token == '-') {
-            // parse '-' and '--'
+            // 解析 '-' 和 '--'
             if (*src == '-') {
                 src ++;
                 token = Dec;
@@ -188,7 +210,7 @@ void next() {
             return;
         }
         else if (token == '!') {
-            // parse '!='
+            // 解析'!='
             if (*src == '=') {
                 src++;
                 token = Ne;
@@ -196,7 +218,7 @@ void next() {
             return;
         }
         else if (token == '<') {
-            // parse '<=', '<<' or '<'
+            // 解析 '<=', '<<' or '<'
             if (*src == '=') {
                 src ++;
                 token = Le;
@@ -209,7 +231,7 @@ void next() {
             return;
         }
         else if (token == '>') {
-            // parse '>=', '>>' or '>'
+            //解析'>='，'>>' 或者 '>'
             if (*src == '=') {
                 src ++;
                 token = Ge;
@@ -222,7 +244,7 @@ void next() {
             return;
         }
         else if (token == '|') {
-            // parse '|' or '||'
+            //解析'|'和'||'
             if (*src == '|') {
                 src ++;
                 token = Lor;
@@ -232,7 +254,7 @@ void next() {
             return;
         }
         else if (token == '&') {
-            // parse '&' and '&&'
+            //解析'&'和'&&'
             if (*src == '&') {
                 src ++;
                 token = Lan;
@@ -261,7 +283,15 @@ void next() {
             token = Cond;
             return;
         }
-        else if (token == '~' || token == ';' || token == '{' || token == '}' || token == '(' || token == ')' || token == ']' || token == ',' || token == ':') {
+        else if (token == '~' || 
+                 token == ';' || 
+                 token == '{' || 
+                 token == '}' || 
+                 token == '(' || 
+                 token == ')' ||
+                 token == ']' || 
+                 token == ',' ||
+                 token == ':') {
             // directly return the character as token;
             return;
         }
@@ -277,3 +307,59 @@ void match(int tk) {
         exit(-1);
     }
 }
+
+static Boolean is_valid_starting_character(char ch)
+{
+
+    if ( (ch >= 'a' && ch <= 'z') ||
+         (ch >= 'A' && ch <= 'Z') ||
+         (ch == '_')){ 
+           return True;
+         }
+
+    return False;
+}
+
+
+static Boolean is_valid_identifier_character(char ch)
+{
+
+    if (is_valid_starting_character(ch) || is_digit(ch)){
+        return True;
+    }
+
+    return False;
+}
+
+static Boolean is_digit(char ch)
+{
+    return (ch >= '0' && ch <= '9') ? True : False;
+}
+
+
+static void process_fraction(char* float_string, int start_idx)
+{
+   int idx = start_idx;
+
+   token = *++src;
+   while ((token >= '0' && token <= '9')){ 
+       float_string[idx] = token;
+       idx++;
+       token = *++src;
+   }
+        
+   //判断是否是非法的浮点数字面量
+   printf("trailing charater of float literal '%c'\n", token);
+   if (! (token == ',' || token == ';' || token == ' ')){
+       printf("bad float literal\n");
+       exit(-1);
+    }
+
+    float_string[idx] = '\0';
+    printf("float val:%lf\n", strtod(float_string, NULL));
+
+
+}
+
+
+
