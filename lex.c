@@ -102,7 +102,9 @@ void next() {
                     memcpy(&float_string[1], string_begin, src - string_begin);
                     idx = idx + src - string_begin;
                     float_string[idx] = '.';
+
                     process_fraction(float_string, idx + 1);
+
                     token_val = (int)strtod(float_string, NULL);
                 }
 
@@ -111,12 +113,15 @@ void next() {
                 if (*src == 'x' || *src == 'X') {
                     // 十六进制
                     token = *++src;
+                    int sum = 0;
                     while ((token >= '0' && token <= '9') || 
                            (token >= 'a' && token <= 'f') || 
                            (token >= 'A' && token <= 'F')) {
-                        token_val = token_val*16 + (token&15) + (token >= 'A' ? 9 : 0);
+                        sum = sum*16 + digitalize_hex_character((char)token);
                         token = *++src;
                     }
+                    token_val = sum;
+
                 //TODO 增加浮点运算
                 }else if(*src == '.'){
                     // 小数0.xxxx 
@@ -153,11 +158,12 @@ void next() {
             // parse string literal, currently, the only supported escape
             // character is '\n', store the string literal into data.
             last_pos = data;
+
             //存取字符字面量
             while (*src != 0 && *src != token) {
                 token_val = *src++;
                 if (token_val == '\\') {
-                    // escape character
+                    // 转义字符
                     token_val = *src++;
                     if (token_val == 'n') {
                         token_val = '\n';
@@ -337,6 +343,7 @@ static Boolean is_digit(char ch)
 }
 
 
+//处理浮点数的小数部分
 static void process_fraction(char* float_string, int start_idx)
 {
    int idx = start_idx;
@@ -361,5 +368,14 @@ static void process_fraction(char* float_string, int start_idx)
 
 }
 
-
-
+//将十六进制的字符转化成相应的数字
+static int digitalize_hex_character(char ch)
+{
+   if ((ch >= '0' && ch <= '9')){
+      return ch - '0';      
+   }else if ((token >= 'a' && token <= 'f')){
+      return ch - 'a' + 10;  
+   }else{
+      return ch - 'A' + 10;  
+   }
+}

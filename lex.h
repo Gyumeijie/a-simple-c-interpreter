@@ -18,4 +18,5 @@ static Boolean is_digit(char ch);
 
 static void process_fraction(char* float_string, int start_idx);
 
+static int digitalize_hex_character(char ch);
 #endif
