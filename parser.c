@@ -39,6 +39,7 @@ static void expression(int level) {
 
         if (token == Num) {
             match(Num);
+            //TODO 进一步判断是否是浮点类型
 
             // emit code
             *++text = IMM;
@@ -746,6 +747,13 @@ static void global_declaration() {
         match(Char);
         basetype = CHAR;
     }
+    else if (token == Float){
+        printf("Float token\n");
+        match(Float);
+        //basetype = FLOAT;
+        basetype = INT;
+    }
+
 
     // parse the comma seperated variable declaration.
     while (token != ';' && token != '}') {
@@ -952,29 +960,34 @@ int init()
 
 
 //每次编译新的代码片段的时候都需要重新设置一下符号表
+//TODO 这些是公共的部分应该只初始化一次
 static  void init_symbol_table()
 {
     //有专门的符号表
     memset(symbols, 0, poolsize);
 
-    src = "char else enum if int return sizeof while "
-          "open read close printf malloc memset memcmp exit void";
+    //注意这个顺序要和symbol.h中的对应起来，否则回报错误
+    //TODO 因为这个是公用的，可以考虑一下将其存放到另一个全局变量中
+    //然后和symbol.h的放在一起，让相关的东西在一起方便以后修改
+    char* keyword = "char int float if else while return";
 
-    prepare_for_tokenize(src, symbols);
+    prepare_for_tokenize(keyword, symbols);
 
     int i;
+
     //关键字
-    // add keywords to symbol table
     i = Char;
-    while (i <= While) {
+    while (i <= Return) {
         next();
         current_id[Token] = i++;
         //printf("store %d\n", current_id[Token]);
     }
 
-    // add library to symbol table
     // 解析src中的符号并将其加入到当前标识中，即不需要
     // 这个步骤可以作为单独的函数提炼出来，方便后面加入新的符号
+    char* libfunc = "open read close printf malloc memset memcmp exit void";
+    prepare_for_tokenize(libfunc, symbols);
+
     i = OPEN;
     while (i <= EXIT) {
         next();
@@ -1056,14 +1069,14 @@ int* relocation()
     memset(new_text, 0, actual_text_len);
     memset(new_data, 0, actual_data_len);
     //printf("new_text %p, new_data %p\n", new_text, new_data);
-    dump_text((int*)text_start, actual_text_len);
+    //dump_text((int*)text_start, actual_text_len);
 
     memcpy(new_data, (void*)data_start, actual_data_len);
     
     do_relocation(new_text, new_data);
 
     memcpy(new_text, (void*)text_start, actual_text_len*sizeof(int));
-    dump_text((int*)new_text, actual_text_len);
+    //dump_text((int*)new_text, actual_text_len);
 
     //重置
     memset(text, 0, poolsize);
