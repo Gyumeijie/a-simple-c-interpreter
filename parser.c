@@ -44,7 +44,7 @@ static void expression(int level) {
             if (num_type == INT){
               // emit code
               *++text = IMM;
-              *++text = token_val + 1;
+              *++text = token_val;
               expr_type = INT;
             }else{
               //加载浮点常量
@@ -54,7 +54,8 @@ static void expression(int level) {
               addr = (double*)(text + 1);
               *addr = token_val_float;
 
-              //内部实现的浮点数占两个字节
+              //内部浮点数常量使用double类型存储占两个字节
+              //变量的话有float和double类型的
               text += 2;
               expr_type = FLOAT;
             }
@@ -160,6 +161,8 @@ static void expression(int level) {
 
                 expr_type = id[Type];
 
+                printf("variable type is %d float %d\n", expr_type, FLOAT);
+                //根据变量的类型选择相应的加载指令
                 *++text = (expr_type == CHAR) ? LC : 
                           (expr_type == INT) ? LI: 
                           (expr_type == FLOAT) ? LF : LD;
@@ -201,7 +204,11 @@ static void expression(int level) {
                 exit(-1);
             }
 
-            *++text = (expr_type == CHAR) ? LC : LI;
+            //float** f;   1.0 + **f
+            //那么通过Load操作逐步解引用addr (LF) (LF)
+            *++text = (expr_type == CHAR) ? LC : 
+                      (expr_type == INT) ? LI :
+                      (expr_type == FLOAT) ? LF : LD;
         }
         else if (token == And) {
             match(And);
@@ -209,7 +216,7 @@ static void expression(int level) {
             expression(Inc); // get the address of
             
             //&*hello 抵消了
-            if (*text == LC || *text == LI) {
+            if (*text == LC || *text == LI || *text == LF || *text == LD){
                 //回退
                 text--;
             }else {
@@ -322,6 +329,9 @@ static void expression(int level) {
                     exit(-1);
                 }
 
+                // 先计算右边表达式的值，并将结果保存到ax或者bx
+                // 如果是整型结果的话就放在ax中，如果是浮点数的
+                // 话就放在bx中
                 expression(Assign);
 
                 expr_type = tmp;
@@ -470,13 +480,37 @@ static void expression(int level) {
                 
                 expr_type = INT;
             }
+            //TODO 先尝试让浮点的加法操作正常工作 
             else if (token == Add) {
                 // add
                 match(Add);
-                *++text = PUSH;
+                // TODO 这里先判断expr_type是否为float类型的如果是float类型的
+                // 话有PUSF指令，将操作数压人到浮点数专门用的堆栈中
+                // 如果不是先保留，然后判断后面是否有操作数为浮点的
+                // 如果有的话， 后面在修改指令
+                // 先转型ITOF指令，将ax中的结果保存到bx中，然后在压人堆栈
+                // 先为ITOF指令保留空间并赋值为nop操作
+
+                printf("+ left type %d\n", expr_type);
+                int *stub1 = NULL, *stub2 = NULL;
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                    //将加载到bx的数字压人到fsp栈中
+                    *++text = PUSF;
+                }else{
+                    //如果后面的表达式的类型是浮点的话，需要修改指令
+                    *++text = NOP;
+                    stub1 = text;
+                    *++text = PUSH; 
+                    stub2 = text;
+                }        
+
+
+                //计算表达式右边的值
                 expression(Mul);
 
-                expr_type = tmp;
+                printf("+ right type %d\n", expr_type);
+                //expr_type = tmp;
+                //如果操作数是指针类型的话
                 if (expr_type > PTR) {
                     // pointer type, and not `char *`
                     *++text = PUSH;
@@ -484,7 +518,30 @@ static void expression(int level) {
                     *++text = sizeof(int);
                     *++text = MUL;
                 }
-                *++text = ADD;
+
+                printf("+ right type %d\n", expr_type);
+                // TODO 这里先判断表达式的类型
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                     //+号左边的表达式如果是整型的话需要使用ATOB将ax的值转换
+                     //成double类型存放bx中, 指令修改如下
+                     if (stub1 != NULL){
+                        *stub1 = ATOB;
+                        *stub2 = PUSF;
+                     }
+
+                     *++text = ADDF;  
+                }else{
+                     //前面的是浮点，后面是整型
+                     if (stub1 == NULL){
+                         //直接将ax的数值转型并存放在bx中，前面的操作数已经压人
+                         //fsp栈中了
+                         *++text = ATOB; 
+                         *++text = ADDF;  
+                     }else{
+                      //两个操作数类型都是整型的
+                         *++text = ADD;  
+                     }
+                }
             }
             else if (token == Sub) {
                 // sub

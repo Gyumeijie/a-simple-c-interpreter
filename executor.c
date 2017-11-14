@@ -7,12 +7,19 @@
 //虚拟机寄存器
 static int *bp, ax, cycle; 
 static int* stack;
+static double* fstack;
 
 
 int interpreter_init()
 {
     //运行是会需要，该部分只要虚拟机运行就行了
-    if (!(stack = malloc(STACK_SIZE))) {
+    if (!(stack = malloc(STACK_SIZE * sizeof(int)))) {
+        printf("could not malloc(%d) for stack area\n", STACK_SIZE);
+        return -1;
+    }
+
+    //运行是会需要，该部分只要虚拟机运行就行了
+    if (!(fstack = malloc(STACK_SIZE * sizeof(double)))) {
         printf("could not malloc(%d) for stack area\n", STACK_SIZE);
         return -1;
     }
@@ -23,12 +30,13 @@ int interpreter_init()
 void run_code(int* code_start)
 {
    //初始化堆栈
-   int* sp = (int *)((int)stack + STACK_SIZE);
-   eval(code_start, sp);
+   int* sp = (int *)(stack + STACK_SIZE);
+   double* fsp = (double *)(fstack + STACK_SIZE);
+   eval(code_start, sp, fsp);
 }
 
 
-static int eval(int* pc, int* sp) {
+static int eval(int* pc, int* sp, double *fsp) {
     int op, *args;
     cycle = 0;
     //临时增加用来保存浮点数的
@@ -44,9 +52,9 @@ static int eval(int* pc, int* sp) {
  
         if (1) {
             printf("%d> %.4s", cycle,
-                   & "LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
-                   "LF,  LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,PUSH,OR  ,XOR ,AND ,"
-                   "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
+                   & "NOP ,LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
+                   "LF  ,LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,ATOB,BTOA,PUSF,PUSH,OR  ,XOR ,AND ,"
+                   "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MUL ,DIV ,MOD ,"
                    "OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
             if (op <= ADJ)
                 printf(" %0x\n", *pc);
@@ -81,7 +89,15 @@ static int eval(int* pc, int* sp) {
         //存储double类型
         else if (op == SD)   {*(double*)*sp++ = bx;}      
 
+        else if (op == ATOB) { bx = (double)ax;}
+
+        else if (op == NOP) { pc++;}
+
         else if (op == PUSH) {*--sp = ax;}                                    
+
+        //TODO 用来操作浮点数堆栈的指令
+        else if (op == PUSF) {*--fsp = bx;}
+
         else if (op == JMP)  {pc = (int *)*pc;}                              
         else if (op == JZ)   {pc = ax ? pc + 1 : (int *)*pc;}               
         else if (op == JNZ)  {pc = ax ? (int *)*pc : pc + 1;}      
@@ -103,10 +119,17 @@ static int eval(int* pc, int* sp) {
         else if (op == GE)  ax = *sp++ >= ax;
         else if (op == SHL) ax = *sp++ << ax;
         else if (op == SHR) ax = *sp++ >> ax;
+
+        //TODO 新增对浮点数的支持
         else if (op == ADD) ax = *sp++ + ax;
+        else if (op == ADDF) { bx = *fsp++ + bx; }
         else if (op == SUB) ax = *sp++ - ax;
+        //else if (op == SUBF) bx = *fsp++ - bx;
         else if (op == MUL) ax = *sp++ * ax;
+        //else if (op == MULF) bx = *fsp++ * bx;
         else if (op == DIV) ax = *sp++ / ax;
+        //else if (op == DIV) bx = *fsp++ / bx;
+
         else if (op == MOD) ax = *sp++ % ax;
 
         //提供必要的一些公共函数

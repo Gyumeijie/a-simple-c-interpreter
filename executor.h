@@ -8,5 +8,5 @@
 extern int interpreter_init();
 extern void run_code(int* code_start);
 
-static int eval(int* pc, int* sp);
+static int eval(int* pc, int* sp, double* fsp);
 #endif

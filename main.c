@@ -10,7 +10,7 @@ int main()
    char* dependency;
 
    double test_extern;
-   src = "use{int j = 33; } action{ test_extern = 1.2;}";
+   src = "use{int j; float i;} action{j=33; i = 1.3; test_extern = 11.2 + i + 1.5;}";
    dependency = "test_extern";
    int* code1 = dependency_inject(dependency, &test_extern, src);
 
