@@ -30,7 +30,7 @@ void do_relocation(const int* new_text_addr, const char* new_data_addr)
       //printf("new data addr %p\n", new_data_addr + offset);
       *text_location = ((int)new_data_addr + offset);
       }else{
-      printf("text_location %p, data_offset %d\n", text_location, offset);
+      //printf("text_location %p, data_offset %d\n", text_location, offset);
       //注意下面的是把new_text_addr向转型成整数后与offset相加，offset需要乘以4
       *text_location = ((int)new_text_addr + offset);
       }

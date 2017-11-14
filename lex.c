@@ -10,7 +10,7 @@ static int  *symbols;
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
 // 变量或者函数类型 
-enum { CHAR, INT, PTR };
+enum { CHAR, INT, FLOAT, PTR};
 
 //声明类型 
 enum {Global, Local, Extern};
@@ -20,6 +20,7 @@ int *current_id;
 int token;
 int token_val;
 int line;
+int num_type;
 extern char* data;
 
 void prepare_for_tokenize(const char* src_code, int* symbol_table)
@@ -85,6 +86,8 @@ void next() {
         //如果是字面量的话就计算其数值
         //对于浮点数暂时不支持如0001.xxx的浮点数形式
         else if (token >= '0' && token <= '9') {
+            num_type = INT;
+
             //保存浮点数字面量，之后用转换函数进行转换
             char float_string[32];
             const char* string_begin = src;
@@ -108,6 +111,7 @@ void next() {
                     process_fraction(float_string, idx + 1);
 
                     token_val = (int)strtod(float_string, NULL);
+                    num_type = FLOAT;
                 }
 
             } else {
@@ -133,6 +137,7 @@ void next() {
                     process_fraction(float_string, 2);
             
                     token_val = (int)strtod(float_string, NULL);
+                    num_type = FLOAT;
                 }else{
                     // 八进制 
                     while (*src >= '0' && *src <= '7') {
@@ -153,6 +158,7 @@ void next() {
          
            token_val = (int)strtod(float_string, NULL);
            token = Num;
+           num_type = FLOAT;
            return;
         }
 

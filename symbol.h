@@ -13,12 +13,20 @@ enum{
 // 标记 
 enum {
    Num = 128, Fun, Sys, Glo, Ext, Id,
-   Char, Else, Enum, If, Int, Return, Sizeof, While,
-   //TODO 将操作符单独分出去
-   Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
-   Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
+   //Char, Else, Enum, If, Int, Return, Sizeof, While,
+   Char, Int, Float, If, Else, While, Return
+
+   //TODO 弄清楚为什么删掉前面的东西会影响结果
+   //Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
+   //Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };
 
+enum {
+   //TODO 将操作符单独分出去
+   Assign = 256, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
+   Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
+};
 // 重定位
 enum {Text_Rel, Data_Rel};
+
 #endif
