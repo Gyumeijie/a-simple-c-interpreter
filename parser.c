@@ -739,13 +739,15 @@ static void global_declaration() {
 
     basetype = INT;
 
-    // parse type information
+    // 解析变量声明的类型
     if (token == Int) {
         match(Int);
     }
     else if (token == Char) {
         match(Char);
         basetype = CHAR;
+        printf("Char token\n");
+
     }
     else if (token == Float){
         printf("Float token\n");
@@ -780,7 +782,6 @@ static void global_declaration() {
 
         //设置了Type和Value，等程序后面引用的时候就能正确加载
         current_id[Type] = type;
-
 
         if(token == Brak){
             //TODO 新增支持数组声明, 数组下标要是整数      
@@ -855,17 +856,22 @@ static void global_declaration() {
            
             //新增的代码支持初始化
             if (token == Assign){
-                //like int a = 10;
+               // 如果复杂的话就去掉初始化
+               // 例如 int a = 10;
                next();
                if (token != Num){
                   printf("%d: bad initailzer\n", line);
                }
 
+               printf("num_type %d\n", num_type);
                *(int*)data = token_val;
+
+               //注意只有初始化的时候才需要匹配Num
+               match(Num);
             }
 
+            //更新data地址
             data = data + sizeof(int);
-            match(Num);
         }
 
         if (token == ',') {
@@ -911,6 +917,7 @@ static void parse_configuration()
     match('}');
 
 }
+
 
 //只初始化一次
 int init()
