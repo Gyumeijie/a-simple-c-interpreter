@@ -41,15 +41,19 @@ static void expression(int level) {
             match(Num);
             //TODO 进一步判断是否是浮点类型
 
-            // emit code
-            *++text = IMM;
-            *++text = token_val;
-
-            expr_type = INT;
+            if (num_type == INT){
+              // emit code
+              *++text = IMM;
+              *++text = token_val + 1;
+              expr_type = INT;
+            }else{
+              *++text = FIMM;
+              *++text = token_val + 2;
+              expr_type = FLOAT;
+            }
         }
         else if (token == '"') {
             // continous string "abc" "abc"
-
 
             // emit code
             *++text = IMM;
@@ -78,16 +82,16 @@ static void expression(int level) {
             match(Id);
             id = current_id;
 
+            //函数调用
             if (token == '(') {
-                // function call
                 match('(');
 
-                // pass in arguments
-                tmp = 0; // number of arguments
+                //实参的个数
+                tmp = 0;
                 while (token != ')') {
                     expression(Assign);
                     *++text = PUSH;
-                    tmp ++;
+                    tmp++;
 
                     if (token == ',') {
                         match(',');
@@ -96,9 +100,7 @@ static void expression(int level) {
                 }
                 match(')');
 
-                // emit code
                 if (id[Class] == Sys) {
-                    // system functions
                     // 系统函数
                     *++text = id[Value];
                 }
@@ -118,6 +120,8 @@ static void expression(int level) {
                     *++text = ADJ;
                     *++text = tmp;
                 }
+
+                //变量的类型
                 expr_type = id[Type];
             }
             else if (id[Class] == Num) {
@@ -148,8 +152,10 @@ static void expression(int level) {
                 // address which is stored in `ax`
 
                 expr_type = id[Type];
-                //TODO Char是不是写错了应该是CHAR
-                *++text = (expr_type == CHAR) ? LC : LI;
+
+                *++text = (expr_type == CHAR) ? LC : 
+                          (expr_type == INT) ? LI: 
+                          (expr_type == FLOAT) ? LF : LD;
             }
         }
         else if (token == '(') {
@@ -288,8 +294,8 @@ static void expression(int level) {
             exit(-1);
         }
     }
-
  
+
     // binary operator and postfix operators.
     {
         while (token >= level) {
@@ -298,9 +304,13 @@ static void expression(int level) {
             if (token == Assign) {
                 // var = expr;
                 match(Assign);
-                if (*text == LC || *text == LI) {
-                    *text = PUSH; // save the lvalue's pointer
+
+                // 变量如果是充当左值话就修改指令，使用PUSH指令保存其地址
+                // 如果是用作右值的话，就使用Load指令加载
+                if (*text == LC || *text == LI || *text == LF || *text == LD) {   
+                    *text = PUSH; 
                 } else {
+                // 左值不是变量，报错
                     printf("%d: bad lvalue in assignment\n", line);
                     exit(-1);
                 }
@@ -308,7 +318,11 @@ static void expression(int level) {
                 expression(Assign);
 
                 expr_type = tmp;
-                *++text = (expr_type == CHAR) ? SC : SI;
+
+                //TODO 增加Float类型的指令
+                *++text = (expr_type == CHAR) ? SC : 
+                          (expr_type == INT) ? SI : 
+                          (expr_type == FLOAT) ? SF: SD;
             }
 
             else if (token == Cond) {
@@ -752,8 +766,8 @@ static void global_declaration() {
     else if (token == Float){
         printf("Float token\n");
         match(Float);
-        //basetype = FLOAT;
-        basetype = INT;
+        basetype = FLOAT;
+        //basetype = INT;
     }
 
 
@@ -863,15 +877,21 @@ static void global_declaration() {
                   printf("%d: bad initailzer\n", line);
                }
 
-               printf("num_type %d\n", num_type);
+               //printf("num_type %d\n", num_type);
                *(int*)data = token_val;
 
                //注意只有初始化的时候才需要匹配Num
                match(Num);
             }
 
-            //更新data地址
-            data = data + sizeof(int);
+            //更新data地址，按照变量的类型
+            if ((basetype == INT)  || 
+                (basetype == CHAR) ||
+                (type > PTR)){
+                data = data + sizeof(int);
+            }else{
+                data = data + sizeof(double);
+            }
         }
 
         if (token == ',') {
@@ -1015,7 +1035,7 @@ static  void init_symbol_table()
 int* dependency_inject
 (
    char* sym, 
-   int *extern_addr,
+   void *extern_addr,
    const char* src_code
 )
 {
@@ -1029,7 +1049,7 @@ int* dependency_inject
 
    //手动设置符号表，进行外部符号导入工作     
    current_id[Class] = Ext;
-   current_id[Type] = INT;
+   current_id[Type] = DOUBLE;
    current_id[Value] = (int)extern_addr;
         
    //设置代码的起始地址
@@ -1063,12 +1083,13 @@ void dump_text(int* text, int len)
 //为后面的重定位进行准备
 int* relocation()
 {
+    //text当前地址是使用了的，而data当前地址是未使用的
     actual_text_len = text - text_start + 1;
-    actual_data_len = data - data_start + 1;
+    actual_data_len = data - data_start;
 
     //进行字节边界对齐
     //printf("actual_text_len %d\n", actual_text_len);
-    //printf("actual_data_len %d\n", actual_data_len);
+    printf("actual_data_len %d\n", actual_data_len);
     
     //注意text是int为单位的，data是char为单位的
     int* new_text = malloc(actual_text_len*sizeof(int));
@@ -1076,7 +1097,7 @@ int* relocation()
     memset(new_text, 0, actual_text_len);
     memset(new_data, 0, actual_data_len);
     //printf("new_text %p, new_data %p\n", new_text, new_data);
-    //dump_text((int*)text_start, actual_text_len);
+    dump_text((int*)text_start, actual_text_len);
 
     memcpy(new_data, (void*)data_start, actual_data_len);
     

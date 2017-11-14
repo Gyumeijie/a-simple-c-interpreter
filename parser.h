@@ -11,7 +11,9 @@ enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
 
 // types of variable/function
-enum { CHAR, INT, FLOAT, PTR };
+// 其中DOUBLE使用来区分外部变量是float类型还是double类型的浮点数
+// 内部的浮点数只有float类型
+enum { CHAR, INT, FLOAT, DOUBLE, PTR };
 
 // type of declaration.
 enum {Global, Local};
@@ -72,7 +74,7 @@ static  void init_symbol_table();
 extern int* dependency_inject
 (
     char* sym, 
-    int *extern_addr,
+    void *extern_addr,
     const char* src_code
 );
 

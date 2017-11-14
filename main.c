@@ -6,17 +6,25 @@ int main()
 {
    init();
    interpreter_init();
-   int test_extern;
    char* src;
    char* dependency;
 
-   
-   src = "use{int j = 122312.11;} action{printf(\"test_extern is  %d\n\", test_extern + j);}";
+   double test_extern;
+   src = "use{int j = 33; } action{ test_extern = 1.2;}";
    dependency = "test_extern";
    int* code1 = dependency_inject(dependency, &test_extern, src);
 
    test_extern = 34;
    run_code(code1);
+   printf("test_extern is %lf\n", test_extern);
+   /*
+   src = "use{int j = 33;  } action{ printf(\"test_extern is  %d\n\", test_extern + j);}";
+   dependency = "test_extern";
+   int* code1 = dependency_inject(dependency, &test_extern, src);
+
+   test_extern = 34;
+   run_code(code1);
+   */
 
    /*
    src = "use{int iii = 2; int k = 3;} action{printf(\"test_extern is %d\n\", test_extern + iii*k);}";
