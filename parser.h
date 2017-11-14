@@ -36,6 +36,7 @@ char *data; // data segment
 extern int *current_id; // current parsed ID
 extern int line;       // line number of source code
 extern int token_val;   // value of current token (mainly for number)
+extern double token_val_float;   // value of current token (mainly for number)
 extern int token; // current token
 //TODO 进一步区分数值类型
 extern int num_type;

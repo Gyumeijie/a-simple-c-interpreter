@@ -47,8 +47,15 @@ static void expression(int level) {
               *++text = token_val + 1;
               expr_type = INT;
             }else{
+              //加载浮点常量
+              double* addr;
+
               *++text = FIMM;
-              *++text = token_val + 2;
+              addr = (double*)(text + 1);
+              *addr = token_val_float;
+
+              //内部实现的浮点数占两个字节
+              text += 2;
               expr_type = FLOAT;
             }
         }

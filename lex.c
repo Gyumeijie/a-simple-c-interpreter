@@ -19,6 +19,8 @@ enum {Global, Local, Extern};
 int *current_id;
 int token;
 int token_val;
+//新增的用来保存浮点数的
+double token_val_float;
 int line;
 int num_type;
 extern char* data;
@@ -110,7 +112,7 @@ void next() {
                     
                     process_fraction(float_string, idx + 1);
 
-                    token_val = (int)strtod(float_string, NULL);
+                    token_val_float = strtod(float_string, NULL);
                     num_type = FLOAT;
                 }
 
@@ -136,7 +138,7 @@ void next() {
 
                     process_fraction(float_string, 2);
             
-                    token_val = (int)strtod(float_string, NULL);
+                    token_val_float = strtod(float_string, NULL);
                     num_type = FLOAT;
                 }else{
                     // 八进制 
@@ -156,7 +158,7 @@ void next() {
            float_string[0] = '.';
            process_fraction(float_string, 1);
          
-           token_val = (int)strtod(float_string, NULL);
+           token_val_float = strtod(float_string, NULL);
            token = Num;
            num_type = FLOAT;
            return;

@@ -59,7 +59,7 @@ static int eval(int* pc, int* sp) {
 
         //TODO 加载float类型的常量，这里的常量是内部的而不是外部导入的
         //外部导入的都是通过地址去加载的
-        else if (op == FIMM)       {bx = *pc++; printf("bx is %f\n", bx);}                                     
+        else if (op == FIMM) {double* addr = (double*)pc; bx = *addr; pc += 2;}                                     
 
         //加载字符类型数据到ax中,原来ax中保存的是地址
         else if (op == LC)   {ax = *(char *)ax;}                              
