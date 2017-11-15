@@ -52,10 +52,10 @@ static int eval(int* pc, int* sp, double *fsp) {
  
         if (1) {
             printf("%d> %.4s", cycle,
-                   & "NOP ,LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
+                   & "LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
                    "LF  ,LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,ATOB,BTOA,PUSF,PUSH,OR  ,XOR ,AND ,"
                    "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MUL ,DIV ,MOD ,"
-                   "OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
+                   "NOP ,OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
             if (op <= ADJ)
                 printf(" %0x\n", *pc);
             else
@@ -91,7 +91,7 @@ static int eval(int* pc, int* sp, double *fsp) {
 
         else if (op == ATOB) { bx = (double)ax;}
 
-        else if (op == NOP) { pc++;}
+        else if (op == NOP) { ;}
 
         else if (op == PUSH) {*--sp = ax;}                                    
 
@@ -103,6 +103,8 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == JNZ)  {pc = ax ? (int *)*pc : pc + 1;}      
         else if (op == CALL) {*--sp = (int)(pc+1); pc = (int *)*pc;} 
         else if (op == ENT)  {*--sp = (int)bp; bp = sp; sp = sp - *pc++;}     
+
+        //清理函数调用传递进来的参数
         else if (op == ADJ)  {sp = sp + *pc++;}                              
         else if (op == LEV)  {sp = bp; bp = (int *)*sp++; pc = (int *)*sp++;} 
         else if (op == LEA)  {ax = (int)(bp + *pc++);}  
