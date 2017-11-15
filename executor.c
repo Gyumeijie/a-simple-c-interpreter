@@ -54,7 +54,7 @@ static int eval(int* pc, int* sp, double *fsp) {
             printf("%d> %.4s", cycle,
                    & "LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
                    "LF  ,LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,ATOB,BTOA,PUSF,PUSH,OR  ,XOR ,AND ,"
-                   "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MUL ,DIV ,MOD ,"
+                   "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MULF,MUL ,DIVF,DIV ,MOD ,"
                    "NOP ,OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
             if (op <= ADJ)
                 printf(" %0x\n", *pc);
@@ -90,6 +90,8 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == SD)   {*(double*)*sp++ = bx;}      
 
         else if (op == ATOB) { bx = (double)ax;}
+
+        else if (op == BTOA) { ax = (int)bx;}
 
         else if (op == NOP) { ;}
 
@@ -128,9 +130,12 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == SUB) ax = *sp++ - ax;
         //else if (op == SUBF) bx = *fsp++ - bx;
         else if (op == MUL) ax = *sp++ * ax;
-        //else if (op == MULF) bx = *fsp++ * bx;
-        else if (op == DIV) ax = *sp++ / ax;
-        //else if (op == DIV) bx = *fsp++ / bx;
+
+        else if (op == MULF) bx = *fsp++ * bx;
+
+        else if (op == DIV) {if (ax == 0) exit(-1); ax = *sp++ / ax;}
+
+        else if (op == DIVF){if (bx == 0.0)exit(-1); bx = *fsp++ / bx;}
 
         else if (op == MOD) ax = *sp++ % ax;
 

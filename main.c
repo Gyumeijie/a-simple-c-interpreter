@@ -9,6 +9,7 @@ int main()
    char* src;
    char* dependency;
 
+   /*
    double test_extern;
    src = "use{int j; float i;} action{j=33; i = 1.3; test_extern = 11.2 + i + 1.5;}";
    dependency = "test_extern";
@@ -17,14 +18,16 @@ int main()
    test_extern = 34;
    run_code(code1);
    printf("test_extern is %lf\n", test_extern);
-   /*
-   src = "use{int j = 33;  } action{ printf(\"test_extern is  %d\n\", test_extern + j);}";
+   */
+
+   
+   int  test_extern;
+   src = "use{int j = 34; float i;} action{test_extern = 34.00 % 10 ; }";
    dependency = "test_extern";
    int* code1 = dependency_inject(dependency, &test_extern, src);
 
-   test_extern = 34;
    run_code(code1);
-   */
+   printf("test_extern is  %d\n",  test_extern);
 
    /*
    src = "use{int iii = 2; int k = 3;} action{printf(\"test_extern is %d\n\", test_extern + iii*k);}";

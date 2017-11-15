@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "symbol.h"
+#include "types.h"
 
 static int debug;    // print the executed instructions
 static int assembly; // print out the assembly and source
@@ -67,6 +68,32 @@ static void statement();
 static void parse_configuration();
 
 extern int init();
+
+static int type_of_token(int token);
+
+static void load_float_constant(double float_const);
+
+static void load_int_constant(int int_const);
+
+static int get_base_type(int type);
+
+static int emit_store_directive(int type);
+
+static int emit_load_directive(int type);
+
+static void check_assignment_types(int left_type, int right_type);
+
+static Boolean does_operate_on_constant();
+
+static void emit_code_for_binary_left ( int** reserve1, int** reserve2);
+
+static void emit_code_for_binary_right
+(
+   int operator_for_float,
+   int operator_for_int,
+   int** reserve1,
+   int** reserve2
+);
 
 static int* relocation();
 

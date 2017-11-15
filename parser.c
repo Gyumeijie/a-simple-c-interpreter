@@ -37,56 +37,44 @@ static void expression(int level) {
             exit(-1);
         }
 
+        // 处理数值
         if (token == Num) {
             match(Num);
             //TODO 进一步判断是否是浮点类型
 
             if (num_type == INT){
-              // emit code
-              *++text = IMM;
-              *++text = token_val;
-              expr_type = INT;
+               load_int_constant(token_val);
+               expr_type = INT;
             }else{
-              //加载浮点常量
-              double* addr;
-
-              *++text = FIMM;
-              addr = (double*)(text + 1);
-              *addr = token_val_float;
-
-              //内部浮点数常量使用double类型存储占两个字节
-              //变量的话有float和double类型的
-              text += 2;
-              expr_type = FLOAT;
+            //加载浮点常量
+               load_float_constant(token_val_float);
+               expr_type = FLOAT;
             }
         }
-        else if (token == '"') {
-            // continous string "abc" "abc"
 
-            // emit code
+        // 处理字符串常量
+        else if (token == '"') {
+
             *++text = IMM;
             *++text = token_val;
 
             match('"');
-            // store the rest strings
             while (token == '"') {
                 match('"');
             }
 
-            // append the end of string character '\0', all the data are default
-            // to 0, so just move data one position forward.
-            //字符串常量不需要重定位
+            // 字符串常量不需要重定位
+            // data段初始化的时候都为0，所以不需要显示的在末尾添加'\0'，下面是
+            // 为了使得data段在4字节边界上对齐，例如如果字符串的长度为11个字节
+            // 的话，那么对齐后实际分配的data空间是12个字节
             data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
 
             expr_type = PTR;
         }
 
+        // 处理标识符
         else if (token == Id) {
-            // there are several type when occurs to Id
-            // but this is unit, so it can only be
-            // 1. function call
-            // 2. Enum variable
-            // 3. global/local variable
+
             match(Id);
             id = current_id;
 
@@ -94,12 +82,12 @@ static void expression(int level) {
             if (token == '(') {
                 match('(');
 
-                //实参的个数
-                tmp = 0;
+                int num_args = 0; //实参的个数
                 while (token != ')') {
+                    // 将参数压人栈中
                     expression(Assign);
                     *++text = PUSH;
-                    tmp++;
+                    num_args++;
 
                     if (token == ',') {
                         match(',');
@@ -108,13 +96,12 @@ static void expression(int level) {
                 }
                 match(')');
 
+                // 系统函数, id[Value]保存的是函数的OP代码
                 if (id[Class] == Sys) {
-                    // 系统函数
                     *++text = id[Value];
                 }
+                // 自定义的函数
                 else if (id[Class] == Fun) {
-                    // function call
-                    // 自定义的函数
                     *++text = CALL;
                     *++text = id[Value];
                 }
@@ -123,25 +110,25 @@ static void expression(int level) {
                     exit(-1);
                 }
 
-                // clean the stack for arguments
-                if (tmp > 0) {
+                // 如果函数调用有传递参数，那么函数返回后需要清理这些参数对应的
+                // 栈空间
+                if (num_args > 0) {
                     *++text = ADJ;
-                    *++text = tmp;
+                    *++text = num_args;
                 }
 
                 //变量的类型
                 expr_type = id[Type];
             }
             else if (id[Class] == Num) {
-                // enum variable
+            // 枚举类型
                 *++text = IMM;
                 *++text = id[Value];
                 expr_type = INT;
             }
             else {
-
-                // 处理变量
-                // TODO 如果只支持全局作用域的话这个可以删掉
+            // 普通变量 
+            
                 if (id[Class] == Ext) {
                     *++text = IMM;                
                     *++text = id[Value]; //id[Value]都是保存其地址
@@ -156,45 +143,48 @@ static void expression(int level) {
                     exit(-1);
                 }
 
-                // emit code, default behaviour is to load the value of the
-                // address which is stored in `ax`
 
                 expr_type = id[Type];
 
-                printf("variable type is %d float %d\n", expr_type, FLOAT);
                 //根据变量的类型选择相应的加载指令
                 *++text = (expr_type == CHAR) ? LC : 
                           (expr_type == INT) ? LI: 
                           (expr_type == FLOAT) ? LF : LD;
             }
         }
+
+        // 强制类型转换以及不同的括号分组
         else if (token == '(') {
-            // cast or parenthesis
             match('(');
-            if (token == Int || token == Char) {
-                tmp = (token == Char) ? CHAR : INT; // cast type
+            // 强制类型转换
+            if (token == Int || token == Char || token == Float) {
+                int cast_type = type_of_token(token);
                 match(token);
                 while (token == Mul) {
                     match(Mul);
-                    tmp = tmp + PTR;
+                    cast_type = cast_type + PTR;
                 }
-
                 match(')');
 
-                //cast has precedence as Inc(++)
+                //转型的优先级和Inc(++)一样
                 expression(Inc); 
 
-                expr_type  = tmp;
+                // 强制类型转换整体的表达式的类型应该和转型的类型是一样的
+                // (int **)var, 那么不管var之前是什么类型的变量，转型后的类型
+                // 就是(int **)
+                expr_type  = cast_type;
+
             } else {
-                // normal parenthesis
+            // 普通的括号分组
                 expression(Assign);
                 match(')');
             }
         }
+
         else if (token == Mul) {
-            // dereference *<addr>
             match(Mul);
-            // dereference has the same precedence as Inc(++)
+
+            //解引用的优先级和Inc(++)一样
             expression(Inc); 
 
             if (expr_type >= PTR) {
@@ -210,14 +200,19 @@ static void expression(int level) {
                       (expr_type == INT) ? LI :
                       (expr_type == FLOAT) ? LF : LD;
         }
+
         else if (token == And) {
             match(And);
-            //需要计算优先级更高的表达式的值
-            expression(Inc); // get the address of
-            
-            //&*hello 抵消了
-            if (*text == LC || *text == LI || *text == LF || *text == LD){
-                //回退
+
+            //取地址的优先级和Inc(++)一样
+            expression(Inc); 
+
+            //如果是&var的话，直接通过load操作前面的IMM操作就可以加载其地址了
+            //"&"后面的只能是变量而不能是常量，但是这里存在一个bug: 如果&const
+            //而这个const的数值恰好是LC LI LF和LD其中一个，所以为了保险起见加上
+            //对这种情况的判断;其次&的优先级比较高所以像&(1+2)之类的都是不合法的
+            if (!does_operate_on_constant() &&
+                 (*text == LC || *text == LI || *text == LF || *text == LD)){
                 text--;
             }else {
                 printf("%d: bad address of\n", line);
@@ -226,69 +221,107 @@ static void expression(int level) {
 
             expr_type = expr_type + PTR;
         }
+
         else if (token == '!') {
-            // not
             match('!');
-            //需要计算优先级更高的表达式的值
+
+            //逻辑非的优先级和Inc(++)一样
             expression(Inc);
 
-            //然后根据表达式的结构进行判断
-            // emit code, use <expr> == 0
+            // 使用expr == 0 进行判断
+            // 如果是"!"后面的表达式类型是浮点类型，则将bx寄存器中的数转型成整
+            // 型并放置在ax中指令BTOA就是这个作用
+            if (expr_type == FLOAT || expr_type == DOUBLE){
+                *++text = BTOA;                
+            }
             *++text = PUSH;
             *++text = IMM;
             *++text = 0;
             *++text = EQ;
 
+            //最后整个表达式(!<expr>)的类型是INT
             expr_type = INT;
         }
+
         else if (token == '~') {
             // bitwise not
             match('~');
-            expression(Inc); //结果放在寄存器中ax
+
+            //按位非的优先级和Inc(++)一样
+            expression(Inc); 
+        
+            //位操作的话表达式的类型一定要正确，因此需要检查一些类型
+            if (expr_type == FLOAT || expr_type == DOUBLE){
+                printf("%d: wrong type argument to bit-complement\n", line);
+                exit(-1); 
+            }
+
+            //使用<expr> XOR -1来时实现按位非，具体细节如下
             //(1111 1111)  -1
             //(0110 0011)  XOR
             //______________
             //
             //(1001 1100)
-            // emit code, use <expr> XOR -1
             *++text = PUSH; 
             *++text = IMM;  
             *++text = -1;
             *++text = XOR;
 
+            //最后整个表达式(~<expr>)的类型是INT
             expr_type = INT;
         }
         else if (token == Add) {
-            // +var, do nothing
+            // +var, 不做实际的操作
             match(Add);
+
+            //正号优先级和Inc(++)一样
             expression(Inc);
 
-            expr_type = INT;
+            //最后整个表达式(+<expr>)的类型和<expr>相同
+            expr_type = expr_type;
         }
         else if (token == Sub) {
             // -var
             match(Sub);
 
             if (token == Num) {
-                *++text = IMM;
-                *++text = -token_val;
+                if (num_type == INT || num_type == CHAR){
+                   load_int_constant(-token_val);
+                }else{
+                   load_float_constant(-token_val_float);
+                }
                 match(Num);
             } else {
+                //TODO 
                 *++text = IMM;
-                *++text = -1;   //ax
-                *++text = PUSH; //*--sp = ax;
+                *++text = -1;   
+                *++text = PUSH;
                 expression(Inc);
-                *++text = MUL;  //ax = *sp++ * ax
+                *++text = MUL; 
             }
 
-            expr_type = INT;
         }
+
         else if (token == Inc || token == Dec) {
-            tmp = token;
+            int save_token = token;
             match(token);
             expression(Inc);
+
+            if (does_operate_on_constant()){
+                printf("%d:Inc or Dec cannot apply on constant\n", line);
+                exit(-1);
+            } 
+
+            // 暂时不支持浮点类型的变量(包括指针类型)++或--操作
+            if (get_base_type(expr_type) > INT){
+                printf("%d: sorry, Inc or Dec is not supported for floating\n",
+                      line);
+                exit(-1);
+            }
+
+
             if (*text == LC) {
-                *text = PUSH;  // to duplicate the address
+                *text = PUSH;  
                 *++text = LC;
             } else if (*text == LI) {
                 *text = PUSH;
@@ -297,10 +330,11 @@ static void expression(int level) {
                 printf("%d: bad lvalue of pre-increment\n", line);
                 exit(-1);
             }
+
             *++text = PUSH;
             *++text = IMM;
             *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
-            *++text = (tmp == Inc) ? ADD : SUB;
+            *++text = (save_token == Inc) ? ADD : SUB;
             *++text = (expr_type == CHAR) ? SC : SI;
         }
         else {
@@ -310,36 +344,34 @@ static void expression(int level) {
     }
  
 
-    // binary operator and postfix operators.
+    //处理二元操作符以及后缀操作符
     {
+        // 根据当前的操作符优先级进行操作
         while (token >= level) {
-            // handle according to current operator's precedence
-            tmp = expr_type;
+            int left_type = expr_type;
             if (token == Assign) {
                 // var = expr;
                 match(Assign);
 
                 // 变量如果是充当左值话就修改指令，使用PUSH指令保存其地址
                 // 如果是用作右值的话，就使用Load指令加载
+                // 左值不是变量，报错
                 if (*text == LC || *text == LI || *text == LF || *text == LD) {   
                     *text = PUSH; 
                 } else {
-                // 左值不是变量，报错
                     printf("%d: bad lvalue in assignment\n", line);
                     exit(-1);
                 }
 
-                // 先计算右边表达式的值，并将结果保存到ax或者bx
-                // 如果是整型结果的话就放在ax中，如果是浮点数的
-                // 话就放在bx中
+                // 然后计算右边表达式的值，并将结果保存到ax或者bx
                 expression(Assign);
 
-                expr_type = tmp;
+                //类型兼容的函数
+                check_assignment_types(left_type, expr_type);
 
-                //TODO 增加Float类型的指令
-                *++text = (expr_type == CHAR) ? SC : 
-                          (expr_type == INT) ? SI : 
-                          (expr_type == FLOAT) ? SF: SD;
+                //如果两个是类型兼容的话，那么整个表达式的类型就是左操作数的类型
+                expr_type = left_type; 
+                *++text = emit_store_directive(expr_type);
             }
 
             else if (token == Cond) {
@@ -386,8 +418,14 @@ static void expression(int level) {
                 match(Or);
                 *++text = PUSH;
                 expression(Xor);
-                *++text = OR;
 
+               //位操作的话表达式的类型一定要正确，因此需要检查一些类型
+               if (expr_type == FLOAT || expr_type == DOUBLE){
+                   printf("%d: wrong type argument to bitwise or\n", line);
+                   exit(-1); 
+                }
+
+                *++text = OR;
                 expr_type = INT;
             }
             else if (token == Xor) {
@@ -395,8 +433,14 @@ static void expression(int level) {
                 match(Xor);
                 *++text = PUSH;
                 expression(And);
-                *++text = XOR;
 
+                //位操作的话表达式的类型一定要正确，因此需要检查一些类型
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                   printf("%d: wrong type argument to bitwise xor\n", line);
+                   exit(-1); 
+                }
+
+                *++text = XOR;
                 expr_type = INT;
             }
             else if (token == And) {
@@ -404,8 +448,14 @@ static void expression(int level) {
                 match(And);
                 *++text = PUSH;
                 expression(Eq);
+
+                //位操作的话表达式的类型一定要正确，因此需要检查一些类型
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                   printf("%d: wrong type argument to bitwise xor\n", line);
+                   exit(-1); 
+                }
+
                 *++text = AND;
-                
                 expr_type = INT;
             }
             else if (token == Eq) {
@@ -484,32 +534,15 @@ static void expression(int level) {
             else if (token == Add) {
                 // add
                 match(Add);
-                // TODO 这里先判断expr_type是否为float类型的如果是float类型的
-                // 话有PUSF指令，将操作数压人到浮点数专门用的堆栈中
-                // 如果不是先保留，然后判断后面是否有操作数为浮点的
-                // 如果有的话， 后面在修改指令
-                // 先转型ITOF指令，将ax中的结果保存到bx中，然后在压人堆栈
-                // 先为ITOF指令保留空间并赋值为nop操作
 
-                printf("+ left type %d\n", expr_type);
-                int *stub1 = NULL, *stub2 = NULL;
-                if (expr_type == FLOAT || expr_type == DOUBLE){
-                    //将加载到bx的数字压人到fsp栈中
-                    *++text = PUSF;
-                }else{
-                    //如果后面的表达式的类型是浮点的话，需要修改指令
-                    *++text = NOP;
-                    stub1 = text;
-                    *++text = PUSH; 
-                    stub2 = text;
-                }        
-
+                int *reserve1 = NULL, *reserve2 = NULL;
+                emit_code_for_binary_left(&reserve1, &reserve2);
 
                 //计算表达式右边的值
                 expression(Mul);
-
+                
                 printf("+ right type %d\n", expr_type);
-                //expr_type = tmp;
+                //TODO expr_type = tmp;
                 //如果操作数是指针类型的话
                 if (expr_type > PTR) { 
                     *++text = PUSH;
@@ -518,29 +551,8 @@ static void expression(int level) {
                     *++text = MUL;
                 }
 
-                printf("+ right type %d\n", expr_type);
-                // TODO 这里先判断表达式的类型
-                if (expr_type == FLOAT || expr_type == DOUBLE){
-                     //+号左边的表达式如果是整型的话需要使用ATOB将ax的值转换
-                     //成double类型存放bx中, 指令修改如下
-                     if (stub1 != NULL){
-                        *stub1 = ATOB;
-                        *stub2 = PUSF;
-                     }
+                emit_code_for_binary_right(ADDF, ADD, &reserve1, &reserve2);
 
-                     *++text = ADDF;  
-                }else{
-                     //前面的是浮点，后面是整型
-                     if (stub1 == NULL){
-                         //直接将ax的数值转型并存放在bx中，前面的操作数已经压人
-                         //fsp栈中了
-                         *++text = ATOB; 
-                         *++text = ADDF;  
-                     }else{
-                      //两个操作数类型都是整型的
-                         *++text = ADD;  
-                     }
-                }
             }
             else if (token == Sub) {
                 // sub
@@ -571,32 +583,54 @@ static void expression(int level) {
                     expr_type = tmp;
                 }
             }
-            else if (token == Mul) {
-                // multiply
+            else if (token == Mul) { // multiply
                 match(Mul);
-                *++text = PUSH;
-                expression(Inc);
-                *++text = MUL;
 
-                expr_type = tmp;
+                int *reserve1 = NULL, *reserve2 = NULL;
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+                
+                expression(Inc);
+
+                emit_code_for_binary_right(MULF, MUL, &reserve1, &reserve2);
+                //*++text = MUL;
+
+                //TODO
+                //expr_type = tmp;
             }
             else if (token == Div) {
                 // divide
                 match(Div);
-                *++text = PUSH;
-                expression(Inc);
-                *++text = DIV;
 
-                expr_type = tmp;
+                int *reserve1 = NULL, *reserve2 = NULL;
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+                expression(Inc);
+
+                emit_code_for_binary_right(DIVF, DIV, &reserve1, &reserve2);
+                //*++text = DIV;
+
+                //expr_type = tmp;
             }
             else if (token == Mod) {
                 // Modulo
                 match(Mod);
+
+                int save_type = expr_type;
                 *++text = PUSH;
+
                 expression(Inc);
+                // 只有两个数是整型数(CHAR或INT)才可以
+                if (!((save_type == INT || save_type == CHAR) &&
+                      (expr_type == INT || expr_type == CHAR))){
+                     printf("%d:invalid operands to binary\n", line);
+                     exit(-1); 
+                }
+
                 *++text = MOD;
 
-                expr_type = tmp;
+                expr_type = INT;
+                //expr_type = tmp;
             }
             else if (token == Inc || token == Dec) {
                 // postfix inc(++) and dec(--)
@@ -1108,7 +1142,7 @@ int* dependency_inject
 
    //手动设置符号表，进行外部符号导入工作     
    current_id[Class] = Ext;
-   current_id[Type] = DOUBLE;
+   current_id[Type] = INT;
    current_id[Value] = (int)extern_addr;
         
    //设置代码的起始地址
@@ -1174,4 +1208,139 @@ int* relocation()
     return new_text + 1;
 }
 
+static int emit_store_directive(int type)
+{
+   return  (expr_type == CHAR) ? SC : 
+           (expr_type == INT) ? SI : 
+           (expr_type == FLOAT) ? SF: SD;
+}
+
+static int emit_load_directive(int type)
+{
+   
+}
+
+static int type_of_token(int token)
+{
+    return (token == Char) ? CHAR : 
+           (token == Int) ? INT :
+           (token == Float) ? FLOAT : DOUBLE; 
+
+}
+
+static void load_float_constant(double float_const)
+{
+    //加载浮点常量
+    double* addr;
+
+    *++text = FIMM;
+    addr = (double*)(text + 1);
+    *addr = float_const;
+
+    //内部浮点数常量使用double类型存储占两个字节
+    //变量的话有float和double类型的
+    text += 2;
+}
+
+static void load_int_constant(int int_const)
+{
+    *++text = IMM;
+    *++text = int_const;
+}
+
+
+static int get_base_type(int type)
+{
+    // CHAR INT FLOAT DOUBLE PTR
+    // 因为PTR的值最大，其它非基本类型都是4个基本类型加上若干个
+    // PTR得到的，因此可以通过取摸来去除指针类型得到基本类型
+    return (type % PTR); 
+}
+
+
+static Boolean does_operate_on_constant()
+{
+  // TODO 这个条件只是必要条件，即如果一个操作符号
+  // 正在操作一个常量的话，那么在该函数被调用的时候
+  // 命令序列应该满足下面的条件，但是还没有找到充分
+  // 条件
+  return (*(text-1) == IMM || *(text-2) == FIMM);
+}
+
+
+static void emit_code_for_binary_left
+(
+   int** reserve1,
+   int** reserve2
+)
+{
+    printf("+ left type %d\n", expr_type);
+    if (expr_type == FLOAT || expr_type == DOUBLE){
+      //将加载到bx的数压人到fsp栈中
+        *++text = PUSF;
+     }else{
+      //如果后面的表达式的类型是浮点的话，需要修改指令
+        *++text = NOP;
+        *reserve1 = text;
+        *++text = PUSH; 
+        *reserve2 = text;
+     }        
+}
+
+static void emit_code_for_binary_right
+(
+   int operator_for_float,
+   int operator_for_int,
+   int** reserve1,
+   int** reserve2
+)
+{
+     printf("+ right type %d\n", expr_type);
+     if (expr_type == FLOAT || expr_type == DOUBLE){
+         //左边的表达式如果是整型的话需要使用ATOB将ax的值转换
+         //成double类型存放bx中, 指令修改如下
+         if (*reserve1 != NULL){
+              *(*reserve1) = ATOB;
+              *(*reserve2) = PUSF;
+           }
+
+           expr_type = DOUBLE;
+           *++text = operator_for_float;  
+      }else{
+          //前面的是浮点，后面是整型
+          if (*reserve1 == NULL){
+               //直接将ax的数值转型并存放在bx中，前面的操作数已经压人
+               //fsp栈中了
+               *++text = ATOB; 
+               *++text = operator_for_float;  
+               expr_type = DOUBLE;
+           }else{
+            //两个操作数类型都是整型的
+               *++text = operator_for_int;  
+               expr_type = INT;
+          }
+     }
+}
+
+static void check_assignment_types(int left_type, int right_type)
+{
+    if (left_type == right_type) return;
+
+    // 赋值左边是浮点型，右边是整型
+    if ((left_type == FLOAT || left_type == DOUBLE) &&
+        (right_type == INT || right_type == CHAR)){
+
+            *++text = ATOB; 
+        
+     }else if ((left_type == INT || left_type == CHAR) &&
+              (right_type == FLOAT || right_type == DOUBLE)){
+    // 赋值左边是整型，右边是浮点型
+
+            *++text = BTOA; 
+     }else{
+        //TODO 其它的类型检查
+        printf("%d: different types in assignment\n", line);
+        exit(-1);
+     }
+}
 
