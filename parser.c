@@ -511,8 +511,7 @@ static void expression(int level) {
                 printf("+ right type %d\n", expr_type);
                 //expr_type = tmp;
                 //如果操作数是指针类型的话
-                if (expr_type > PTR) {
-                    // pointer type, and not `char *`
+                if (expr_type > PTR) { 
                     *++text = PUSH;
                     *++text = IMM;
                     *++text = sizeof(int);
@@ -808,50 +807,45 @@ static void statement() {
 
 
 
-static void global_declaration() {
-    // int [*]id [; | (...) {...}]
-
-
-    int type; // tmp, actual type for variable
-    int i; // tmp 
-
-    basetype = INT;
-
+static void global_declaration() 
+{
     // 解析变量声明的类型
     if (token == Int) {
         match(Int);
+        basetype = INT;
+        printf("Int token\n");
     }
     else if (token == Char) {
         match(Char);
         basetype = CHAR;
         printf("Char token\n");
-
     }
     else if (token == Float){
-        printf("Float token\n");
         match(Float);
         basetype = FLOAT;
-        //basetype = INT;
+        printf("Float token\n");
     }
 
 
-    // parse the comma seperated variable declaration.
+    // 解析可由逗号分割的变量声明 
     while (token != ';' && token != '}') {
-        type = basetype;
+        int final_type = basetype;
 
-        // parse pointer type, note that there may exist `int ****x;`
+        // 解析指针类型，因为会存在如 "int ****var;" 的多级指针声明需要用一个循
+        // 环来解析，注意因为在词法分析阶段解析标识符的时候遇到非标识符的字符
+        // 就会停止下来，因此 "int**** var;" 这种形式也是可以的
         while (token == Mul) {
             match(Mul);
-            type = type + PTR;
+            final_type = final_type + PTR;
         }
 
         if (token != Id) {
-            // invalid declaration
+            // 如果记号不是标识符的话则为非法声明
             printf("%d: bad global declaration\n", line);
             exit(-1);
         }
         if (current_id[Class]) {
-            // identifier exists
+            // 标识符已经存在
             printf("%d: duplicate global declaration\n", line);
             exit(-1);
         }
@@ -859,7 +853,7 @@ static void global_declaration() {
         match(Id);
 
         //设置了Type和Value，等程序后面引用的时候就能正确加载
-        current_id[Type] = type;
+        current_id[Type] = final_type;
 
         if(token == Brak){
             //TODO 新增支持数组声明, 数组下标要是整数      
@@ -885,7 +879,7 @@ static void global_declaration() {
             current_id[Value] = (int)addr_keeper;
            // current_id[Value] = (int)&data;
            // printf("saved value %p\n",&data);
-            current_id[Type] = type + PTR;
+            current_id[Type] = final_type + PTR;
             
             int* array_addr = (int*)data;
             printf("array addr  %p\n", array_addr);
@@ -951,9 +945,10 @@ static void global_declaration() {
             //更新data地址，按照变量的类型
             if ((basetype == INT)  || 
                 (basetype == CHAR) ||
-                (type > PTR)){
+                (final_type > PTR)){
                 data = data + sizeof(int);
             }else{
+                // 内部的float类型以及double类型的都按照double的类型存储
                 data = data + sizeof(double);
             }
         }
