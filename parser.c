@@ -376,6 +376,13 @@ static void expression(int level) {
             else if (token == Cond) {
                 // expr ? a : b;
                 match(Cond);
+
+                // 如果结果是float类型的，那么将bx中的数转型移到ax中
+                // 转型的精度损失不会影响条件的真假性
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                  *++text = BTOA;
+                }
+
                 *++text = JZ;
                 addr = ++text;
                 expression(Assign);
@@ -385,10 +392,15 @@ static void expression(int level) {
                     printf("%d: missing colon in conditional\n", line);
                     exit(-1);
                 }
+                int offset = (text + 3 - text_start)*sizeof(int);
+                add_relocation_item(addr, offset, Text_Rel);
                 *addr = (int)(text + 3);
                 *++text = JMP;
+
                 addr = ++text;
                 expression(Cond);
+                offset = (text + 1 - text_start)*sizeof(int);
+                add_relocation_item(addr, offset, Text_Rel);
                 *addr = (int)(text + 1);
             }
 
@@ -398,8 +410,10 @@ static void expression(int level) {
                 *++text = JNZ;
                 addr = ++text;
                 expression(Lan);
-                *addr = (int)(text + 1);
 
+                int offset = (text + 1 - text_start)*sizeof(int);
+                add_relocation_item(addr, offset, Text_Rel);
+                *addr = (int)(text + 1);
                 expr_type = INT;
             }
             else if (token == Lan) {
@@ -408,6 +422,9 @@ static void expression(int level) {
                 *++text = JZ;
                 addr = ++text;
                 expression(Or);
+
+                int offset = (text + 1 - text_start)*sizeof(int);
+                add_relocation_item(addr, offset, Text_Rel);
                 *addr = (int)(text + 1);
 
                 expr_type = INT;
