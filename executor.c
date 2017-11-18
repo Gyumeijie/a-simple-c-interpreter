@@ -75,7 +75,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         //加载整型数据到ax中,原来ax中保存的是地址
         else if (op == LI)   {ax = *(int *)ax;}        
 
-        else if (op == LF)   {bx = *(float *)ax;}        
+        else if (op == LF)   {bx = *(double *)ax; printf("bx is %lf\n", bx);}        
         
         else if (op == LD)   {bx = *(double *)ax;}        
 
@@ -85,7 +85,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         // TODO 因为外部注入的变量类型可能是float类型的也可能是double类型的
         // 所以存储的时候需要区分开来因此设计了两条指令
         //存储float类型的
-        else if (op == SF)   {*(float*)*sp++ = bx;}      
+        else if (op == SF)   {*(float*)*sp++ = bx; printf("bx is %lf\n", bx);}      
         //存储double类型
         else if (op == SD)   {*(double*)*sp++ = bx;}      
 
