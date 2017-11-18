@@ -232,6 +232,7 @@ static void expression(int level) {
             if (expr_type == FLOAT || expr_type == DOUBLE){
                 *++text = BTOA;                
             }
+
             *++text = PUSH;
             *++text = IMM;
             *++text = 0;
@@ -407,6 +408,13 @@ static void expression(int level) {
             else if (token == Lor) {
                 // logic or
                 match(Lor);
+
+                // 如果结果是float类型的，那么将bx中的数转型移到ax中
+                // 转型的精度损失不会影响条件的真假性
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                  *++text = BTOA;
+                }
+
                 *++text = JNZ;
                 addr = ++text;
                 expression(Lan);
@@ -419,6 +427,13 @@ static void expression(int level) {
             else if (token == Lan) {
                 // logic and
                 match(Lan);
+
+                // 如果结果是float类型的，那么将bx中的数转型移到ax中
+                // 转型的精度损失不会影响条件的真假性
+                if (expr_type == FLOAT || expr_type == DOUBLE){
+                  *++text = BTOA;
+                }
+
                 *++text = JZ;
                 addr = ++text;
                 expression(Or);
@@ -795,6 +810,12 @@ static void statement() {
         expression(Assign);  
         match(')');
 
+        // 如果结果是float类型的，那么将bx中的数转型移到ax中
+        // 转型的精度损失不会影响条件的真假性
+        if (expr_type == FLOAT || expr_type == DOUBLE){
+               *++text = BTOA;
+         }
+
         *++text = JZ;
         b = ++text; //先为标号b分配一个地址空间
 
@@ -842,6 +863,12 @@ static void statement() {
         match('(');
         expression(Assign);
         match(')');
+
+        // 如果结果是float类型的，那么将bx中的数转型移到ax中
+        // 转型的精度损失不会影响条件的真假性
+        if (expr_type == FLOAT || expr_type == DOUBLE){
+              *++text = BTOA;
+        }
 
         *++text = JZ;
         b = ++text; //先为标号b分配一个地址空间
