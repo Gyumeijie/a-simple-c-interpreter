@@ -147,9 +147,7 @@ static void expression(int level) {
                 expr_type = id[Type];
 
                 //根据变量的类型选择相应的加载指令
-                *++text = (expr_type == CHAR) ? LC : 
-                          (expr_type == INT) ? LI: 
-                          (expr_type == FLOAT) ? LF : LD;
+                *++text = emit_load_directive(expr_type);
             }
         }
 
@@ -187,6 +185,7 @@ static void expression(int level) {
             //解引用的优先级和Inc(++)一样
             expression(Inc); 
 
+            printf("expr_type %d\n", expr_type);
             if (expr_type >= PTR) {
                 expr_type = expr_type - PTR;
             } else {
@@ -195,10 +194,9 @@ static void expression(int level) {
             }
 
             //float** f;   1.0 + **f
-            //那么通过Load操作逐步解引用addr (LF) (LF)
-            *++text = (expr_type == CHAR) ? LC : 
-                      (expr_type == INT) ? LI :
-                      (expr_type == FLOAT) ? LF : LD;
+            //那么通过Load操作逐步解引用addr (LI) (LF)
+            //
+            *++text = emit_load_directive(expr_type); 
         }
 
         else if (token == And) {
@@ -367,6 +365,7 @@ static void expression(int level) {
                 expression(Assign);
 
                 //类型兼容的函数
+                printf("assign left %d , right %d\n", left_type, expr_type);
                 check_assignment_types(left_type, expr_type);
 
                 //如果两个是类型兼容的话，那么整个表达式的类型就是左操作数的类型
@@ -497,9 +496,15 @@ static void expression(int level) {
             else if (token == Le) {
                 // less than or equal to
                 match(Le);
+
+                int *reserve1 = NULL, *reserve2 = NULL;
+                emit_code_for_binary_left(&reserve1, &reserve2);
+
                 *++text = PUSH;
                 expression(Shl);
                 *++text = LE;
+
+                emit_code_for_binary_right(LEF, LE, &reserve1, &reserve2);
 
                 expr_type = INT;
             }
@@ -969,8 +974,17 @@ static void global_declaration()
                   printf("%d: bad initailzer\n", line);
                }
 
-               //printf("num_type %d\n", num_type);
-               *(int*)data = token_val;
+               // 根据变量类型存储相应的值
+               if (basetype == CHAR || basetype == INT){
+                   *(int*)data = (num_type == INT) ? token_val
+                                                   : (int)token_val_float;
+               }else if (basetype == FLOAT || basetype == DOUBLE){
+                   *(double*)data = (num_type == FLOAT) ? token_val_float
+                                                        : (double)token_val;
+               }else{
+                   // TODO 指针的赋值
+               }
+
 
                //注意只有初始化的时候才需要匹配Num
                match(Num);
@@ -1112,7 +1126,7 @@ static  void init_symbol_table()
     while (i <= EXIT) {
         next();
         current_id[Class] = Sys;
-        current_id[Type] = INT;
+        current_id[Type] = FLOAT;
         current_id[Value] = i++;
         //为什么不设置Token的值
         //这些是标识符其token号为133
@@ -1210,13 +1224,27 @@ int* relocation()
 
 static int emit_store_directive(int type)
 {
-   return  (expr_type == CHAR) ? SC : 
-           (expr_type == INT) ? SI : 
-           (expr_type == FLOAT) ? SF: SD;
+   // 如果变量类型是指针类型的，先将保存其地址
+   // 最后等expr_type减为其基本类型时再用正确的
+   // 存储指令保存相应类型的值
+   if (type > PTR) return SI;
+
+   return  (type == CHAR) ? SC : 
+           (type == INT) ? SI : 
+           (type == FLOAT) ? SF: SD;
 }
 
 static int emit_load_directive(int type)
 {
+   // 如果变量类型是指针类型的，先将加载其地址
+   // 最后等expr_type减为其基本类型时再用正确的
+   // 加载指令加载相应类型的值
+   if (type > PTR) return LI;
+
+   // 处理基本类型char int float double
+   return  (type == CHAR) ? LC : 
+           (type == INT) ? LI :
+           (type == FLOAT) ? LF : LD;
    
 }
 

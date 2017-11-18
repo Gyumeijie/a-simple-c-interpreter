@@ -54,7 +54,7 @@ static int eval(int* pc, int* sp, double *fsp) {
             printf("%d> %.4s", cycle,
                    & "LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
                    "LF  ,LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,ATOB,BTOA,PUSF,PUSH,OR  ,XOR ,AND ,"
-                   "EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MULF,MUL ,DIVF,DIV ,MOD ,"
+                   "EQ  ,NE  ,LT  ,GT  ,LEF ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MULF,MUL ,DIVF,DIV ,MOD ,"
                    "NOP ,OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
             if (op <= ADJ)
                 printf(" %0x\n", *pc);
@@ -75,7 +75,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         //加载整型数据到ax中,原来ax中保存的是地址
         else if (op == LI)   {ax = *(int *)ax;}        
 
-        else if (op == LF)   {bx = *(float *)ax;}        
+        else if (op == LF)   {bx = *(double *)ax; printf("bx is %lf\n", bx);}        
         
         else if (op == LD)   {bx = *(double *)ax;}        
 
@@ -85,7 +85,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         // TODO 因为外部注入的变量类型可能是float类型的也可能是double类型的
         // 所以存储的时候需要区分开来因此设计了两条指令
         //存储float类型的
-        else if (op == SF)   {*(float*)*sp++ = bx;}      
+        else if (op == SF)   {*(float*)*sp++ = bx; printf("bx is %lf\n", bx);}      
         //存储double类型
         else if (op == SD)   {*(double*)*sp++ = bx;}      
 
@@ -119,6 +119,9 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == NE)  ax = *sp++ != ax;
         else if (op == LT)  ax = *sp++ < ax;
         else if (op == LE)  ax = *sp++ <= ax;
+
+        //
+        else if (op == LEF) {ax = (*fsp++ <= bx);}
         else if (op == GT)  ax = *sp++ >  ax;
         else if (op == GE)  ax = *sp++ >= ax;
         else if (op == SHL) ax = *sp++ << ax;
