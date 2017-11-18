@@ -550,8 +550,18 @@ static void expression(int level) {
             else if (token == Shl) {
                 // shift left
                 match(Shl);
+                int save_type = expr_type;
+
                 *++text = PUSH;
                 expression(Add);
+
+                // 两侧的操作数只能是char以及int型的
+                if ((save_type == FLOAT || save_type == DOUBLE) ||
+                    (expr_type == FLOAT || save_type == DOUBLE)){
+                   printf("%d: wrong type argument to shift left\n", line);
+                   exit(-1); 
+                }
+
                 *++text = SHL;
                 
                 expr_type = INT;
@@ -559,8 +569,18 @@ static void expression(int level) {
             else if (token == Shr) {
                 // shift right
                 match(Shr);
+                int save_type = expr_type;
+
                 *++text = PUSH;
                 expression(Add);
+
+                // 两侧的操作数只能是char以及int型的
+                if ((save_type == FLOAT || save_type == DOUBLE) ||
+                    (expr_type == FLOAT || save_type == DOUBLE)){
+                   printf("%d: wrong type argument to shitf right\n", line);
+                   exit(-1); 
+                }
+
                 *++text = SHR;
                 
                 expr_type = INT;
