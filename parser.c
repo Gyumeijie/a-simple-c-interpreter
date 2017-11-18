@@ -460,50 +460,74 @@ static void expression(int level) {
             else if (token == Eq) {
                 // equal ==
                 match(Eq);
-                *++text = PUSH;
+                int *reserve1 = NULL, *reserve2 = NULL;
+
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+
                 expression(Ne);
-                *++text = EQ;
+
+                //*++text = EQ;
+                emit_code_for_binary_right(EQF, EQ, &reserve1, &reserve2);
 
                 expr_type = INT;
             }
             else if (token == Ne) {
                 // not equal !=
                 match(Ne);
-                *++text = PUSH;
+                int *reserve1 = NULL, *reserve2 = NULL;
+
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+                
                 expression(Lt);
-                *++text = NE;
+
+                //*++text = NE;
+                emit_code_for_binary_right(NEF, NE, &reserve1, &reserve2);
 
                 expr_type = INT;
             }
             else if (token == Lt) {
                 // less than
                 match(Lt);
-                *++text = PUSH;
-                expression(Shl);
-                *++text = LT;
+                int *reserve1 = NULL, *reserve2 = NULL;
+
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
                 
+                expression(Shl);
+
+                //*++text = LT;
+                emit_code_for_binary_right(LTF, LT, &reserve1, &reserve2);
+
                 expr_type = INT;
             }
             else if (token == Gt) {
                 // greater than
                 match(Gt);
-                *++text = PUSH;
+                int *reserve1 = NULL, *reserve2 = NULL;
+
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+                
                 expression(Shl);
-                *++text = GT;
+
+                //*++text = GT;
+                emit_code_for_binary_right(GTF, GT, &reserve1, &reserve2);
 
                 expr_type = INT;
             }
             else if (token == Le) {
                 // less than or equal to
                 match(Le);
-
                 int *reserve1 = NULL, *reserve2 = NULL;
+
                 emit_code_for_binary_left(&reserve1, &reserve2);
-
-                *++text = PUSH;
+                //*++text = PUSH;
+                
                 expression(Shl);
-                *++text = LE;
 
+                //*++text = LE;
                 emit_code_for_binary_right(LEF, LE, &reserve1, &reserve2);
 
                 expr_type = INT;
@@ -511,9 +535,15 @@ static void expression(int level) {
             else if (token == Ge) {
                 // greater than or equal to
                 match(Ge);
-                *++text = PUSH;
+                int *reserve1 = NULL, *reserve2 = NULL;
+
+                emit_code_for_binary_left(&reserve1, &reserve2);
+                //*++text = PUSH;
+            
                 expression(Shl);
-                *++text = GE;
+
+                //*++text = GE;
+                emit_code_for_binary_right(GEF, GE, &reserve1, &reserve2);
 
                 expr_type = INT;
             }

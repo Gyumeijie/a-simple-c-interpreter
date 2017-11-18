@@ -54,7 +54,7 @@ static int eval(int* pc, int* sp, double *fsp) {
             printf("%d> %.4s", cycle,
                    & "LEA ,IMM ,FIMM,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LD  ,"
                    "LF  ,LI  ,LC  ,SD  ,SF  ,SI  ,SC  ,ATOB,BTOA,PUSF,PUSH,OR  ,XOR ,AND ,"
-                   "EQ  ,NE  ,LT  ,GT  ,LEF ,LE  ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MULF,MUL ,DIVF,DIV ,MOD ,"
+                   "EQF ,EQ  ,NEF ,NE  ,LTF ,LT  ,GTF ,GT  ,LEF ,LE  ,GEF ,GE  ,SHL ,SHR ,ADDF,ADD ,SUB ,MULF,MUL ,DIVF,DIV ,MOD ,"
                    "NOP ,OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT"[op * 5]);
             if (op <= ADJ)
                 printf(" %0x\n", *pc);
@@ -80,7 +80,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == LD)   {bx = *(double *)ax;}        
 
         else if (op == SC)   {ax = *(char *)*sp++ = ax;} 
-        else if (op == SI)   {*(int *)*sp++ = ax;}        
+        else if (op == SI)   {*(int *)*sp++ = ax; printf("ax %d\n", ax);}        
 
         // TODO 因为外部注入的变量类型可能是float类型的也可能是double类型的
         // 所以存储的时候需要区分开来因此设计了两条指令
@@ -115,15 +115,31 @@ static int eval(int* pc, int* sp, double *fsp) {
         else if (op == OR)  ax = *sp++ | ax;
         else if (op == XOR) ax = *sp++ ^ ax;
         else if (op == AND) ax = *sp++ & ax;
-        else if (op == EQ)  ax = *sp++ == ax;
-        else if (op == NE)  ax = *sp++ != ax;
-        else if (op == LT)  ax = *sp++ < ax;
-        else if (op == LE)  ax = *sp++ <= ax;
 
         //
+        else if (op == EQ)  ax = *sp++ == ax;
+        else if (op == EQF)  {ax = (*fsp++ == bx);}
+
+        // 
+        else if (op == NE)  ax = *sp++ != ax;
+        else if (op == NEF)  {ax = (*fsp++ != bx);}
+
+        //
+        else if (op == LT)  ax = *sp++ < ax;
+        else if (op == LTF) {ax = (*fsp++ < bx);}
+
+        //
+        else if (op == LE)  ax = *sp++ <= ax;
         else if (op == LEF) {ax = (*fsp++ <= bx);}
+
+        //
         else if (op == GT)  ax = *sp++ >  ax;
+        else if (op == GTF) {ax = (*fsp++ > bx);}
+
+        //
         else if (op == GE)  ax = *sp++ >= ax;
+        else if (op == GEF) {ax = (*fsp++ >= bx);}
+
         else if (op == SHL) ax = *sp++ << ax;
         else if (op == SHR) ax = *sp++ >> ax;
 

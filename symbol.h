@@ -4,8 +4,9 @@
 // 指令 
 enum{ 
     LEA, IMM, FIMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LD, LF, LI, LC, SD, SF, 
-    SI, SC, ATOB, BTOA, PUSF, PUSH, OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL,
-    SHR, ADDF, ADD, SUB,MULF ,MUL, DIVF, DIV, MOD, NOP,
+    SI, SC, ATOB, BTOA, PUSF, PUSH, OR, XOR, AND, EQF, EQ, NEF, NE, LTF, LT,
+    GTF, GT, LEF, LE, GEF, GE, SHL, SHR, ADDF, ADD, SUB,MULF ,MUL, DIVF, DIV, 
+    MOD, NOP,
     
     // TODO 将公共函数部分分割开来
     OPEN, READ, CLOS, PRTF, MALC, MSET, MCMP, EXIT
