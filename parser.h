@@ -3,6 +3,7 @@
 
 #include "symbol.h"
 #include "types.h"
+#include "dependency.h"
 
 static int debug;    // print the executed instructions
 static int assembly; // print out the assembly and source
@@ -101,8 +102,7 @@ static  void init_symbol_table();
 
 extern int* dependency_inject
 (
-    char* sym, 
-    void *extern_addr,
+    struct dependency_items* dep_itemsp,   
     const char* src_code
 );
 

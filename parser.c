@@ -7,6 +7,7 @@
 #include "executor.h"
 #include "lex.h"
 #include "relocation.h"
+#include "dependency.h"
 
 /**
  *
@@ -1235,23 +1236,27 @@ static  void init_symbol_table()
 //TODO 如果要处理多个变量的话就建议使用参数包
 int* dependency_inject
 (
-   char* sym, 
-   void *extern_addr,
+   struct dependency_items* dep_itemsp,   
    const char* src_code
 )
 {
 
    init_symbol_table();
 
-   prepare_for_tokenize(sym, symbols);
-   //目前只处理一个符号的导入
-   src = sym;
-   next();
 
-   //手动设置符号表，进行外部符号导入工作     
-   current_id[Class] = Ext;
-   current_id[Type] = INT;
-   current_id[Value] = (int)extern_addr;
+   int num_dep_items = dep_itemsp->num_items;
+   int i;
+   printf("add dependency\n");
+   struct dependency* items = dep_itemsp->items;
+   for (i=0; i<num_dep_items; i++){
+      src = items[i].var_name;
+      prepare_for_tokenize(src, symbols);
+      next();
+      current_id[Class] = Ext;
+      current_id[Type] = items[i].var_type;
+      current_id[Value] = (int)items[i].var_addr;
+   }
+
         
    //设置代码的起始地址
    code_start = text + 1;
