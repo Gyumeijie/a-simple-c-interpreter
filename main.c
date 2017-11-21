@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include "parser.h"
 #include "executor.h"
+#include "dependency.h"
 
 int main()
 {
-   init();
-   interpreter_init();
+   parser_init();
+   executor_init();
    char* src;
    char* dependency;
 
@@ -21,13 +22,19 @@ int main()
    */
 
    
-   int  test_extern;
-   src = "use{int j = 34; float i;} action{test_extern = 34.00 % 10 ; }";
-   dependency = "test_extern";
-   int* code1 = dependency_inject(dependency, &test_extern, src);
+   double test_extern = 10;
+   int  result;
+
+   struct dependency_items* dep_itemsp;
+   dep_itemsp = init_dependency_items(2);
+   add_dependency_item(dep_itemsp, "test_extern", &test_extern, DOUBLE);
+   add_dependency_item(dep_itemsp, "result", &result, INT);
+   src = "use{double f;} action{result = (float*)test_extern; }";
+   
+   int* code1 = dependency_inject(dep_itemsp, src);
 
    run_code(code1);
-   printf("test_extern is  %d\n",  test_extern);
+   printf("test_extern is  %lf, result is %d\n",  test_extern, result);
 
    /*
    src = "use{int iii = 2; int k = 3;} action{printf(\"test_extern is %d\n\", test_extern + iii*k);}";

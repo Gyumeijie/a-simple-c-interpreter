@@ -68,7 +68,7 @@ static void statement();
 
 static void parse_configuration();
 
-extern int init();
+extern int parser_init();
 
 static int type_of_token(int token);
 
@@ -95,6 +95,8 @@ static void emit_code_for_binary_right
    int** reserve1,
    int** reserve2
 );
+
+static void numtype_to_strtype(int num_type, char* repr);
 
 static int* relocation();
 

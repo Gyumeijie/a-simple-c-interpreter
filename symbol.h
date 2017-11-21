@@ -17,7 +17,7 @@ enum{
 enum {
    Num = 128, Fun, Sys, Glo, Ext, Id,
    //Char, Else, Enum, If, Int, Return, Sizeof, While,
-   Char, Int, Float, If, Else, While, Return
+   Char, Int, Float, Double, If, Else, While, Return
 
    //TODO 弄清楚为什么删掉前面的东西会影响结果
    //Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,

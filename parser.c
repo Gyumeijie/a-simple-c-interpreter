@@ -47,7 +47,7 @@ static void expression(int level) {
                load_int_constant(token_val);
                expr_type = INT;
             }else{
-            //加载浮点常量
+            //TODO 加载浮点常量，浮点常量double类型存储
                load_float_constant(token_val_float);
                expr_type = FLOAT;
             }
@@ -156,7 +156,7 @@ static void expression(int level) {
         else if (token == '(') {
             match('(');
             // 强制类型转换
-            if (token == Int || token == Char || token == Float) {
+            if (token == Int || token == Char || token == Float || Double) {
                 int cast_type = type_of_token(token);
                 match(token);
                 while (token == Mul) {
@@ -168,7 +168,9 @@ static void expression(int level) {
                 //转型的优先级和Inc(++)一样
                 expression(Inc); 
 
-                // 强制类型转换整体的表达式的类型应该和转型的类型是一样的
+                check_assignment_types(cast_type, expr_type);
+                
+                // 强制类型转换整体的表达式的类型应该和转型的类型是一样的例如
                 // (int **)var, 那么不管var之前是什么类型的变量，转型后的类型
                 // 就是(int **)
                 expr_type  = cast_type;
@@ -958,6 +960,10 @@ static void global_declaration()
         match(Float);
         basetype = FLOAT;
         printf("Float token\n");
+    }else if (token == Double){
+        match(Double);
+        basetype = DOUBLE;
+        printf("Double token\n");
     }
 
 
@@ -1073,7 +1079,14 @@ static void global_declaration()
                if (basetype == CHAR || basetype == INT){
                    *(int*)data = (num_type == INT) ? token_val
                                                    : (int)token_val_float;
-               }else if (basetype == FLOAT || basetype == DOUBLE){
+               }else if (basetype == FLOAT){
+                    // 因为可能会出现float f = 1这样的情况，所以需要判断
+                    // 右边的数值是声明类型的
+                   *(float*)data = (num_type == FLOAT) ? token_val_float
+                                                        : (float)token_val;
+               }
+               else if (basetype == DOUBLE){
+                   // 同上double d = 1
                    *(double*)data = (num_type == FLOAT) ? token_val_float
                                                         : (double)token_val;
                }else{
@@ -1090,8 +1103,11 @@ static void global_declaration()
                 (basetype == CHAR) ||
                 (final_type > PTR)){
                 data = data + sizeof(int);
+            }else if(basetype == FLOAT){
+                // 内部的float类型以及double类型运算都是在类型为double的
+                // 寄存器的，但是存放在data上还是要区分这两种数据类型
+                data = data + sizeof(float);
             }else{
-                // 内部的float类型以及double类型的都按照double的类型存储
                 data = data + sizeof(double);
             }
         }
@@ -1142,7 +1158,7 @@ static void parse_configuration()
 
 
 //只初始化一次
-int init()
+int parser_init()
 {
     int i, fd;
     int *tmp;
@@ -1198,7 +1214,7 @@ static  void init_symbol_table()
     //注意这个顺序要和symbol.h中的对应起来，否则回报错误
     //TODO 因为这个是公用的，可以考虑一下将其存放到另一个全局变量中
     //然后和symbol.h的放在一起，让相关的东西在一起方便以后修改
-    char* keyword = "char int float if else while return";
+    char* keyword = "char int float double if else while return";
 
     prepare_for_tokenize(keyword, symbols);
 
@@ -1414,6 +1430,7 @@ static void emit_code_for_binary_left
      }        
 }
 
+
 static void emit_code_for_binary_right
 (
    int operator_for_float,
@@ -1449,9 +1466,24 @@ static void emit_code_for_binary_right
      }
 }
 
+
+// 检测赋值"left_type = right_type"和转型"(left_type)right_type"
+// 转型也可以看成是一种赋值例如int(10.5) + 10.0 结果是20而不是
+// 20.5，所以这里用同一个函数进行检测
 static void check_assignment_types(int left_type, int right_type)
 {
     if (left_type == right_type) return;
+ 
+    // 为了安全起见不同类型的指针以及基本类型和指针类型不能相互赋值
+    // 和转型，因此这里的转型是"受限的转型"
+    if (left_type >= PTR || right_type >= PTR){
+        char left_str_repr[64], right_str_repr[64];
+        numtype_to_strtype(left_type, left_str_repr);
+        numtype_to_strtype(right_type, right_str_repr);
+        printf("%d: bad types in assignment or cast:\n", line);
+        printf("left type: %s, right type: %s\n", left_str_repr, right_str_repr);
+        exit(-1);
+    }
 
     // 赋值左边是浮点型，右边是整型
     if ((left_type == FLOAT || left_type == DOUBLE) &&
@@ -1465,9 +1497,29 @@ static void check_assignment_types(int left_type, int right_type)
 
             *++text = BTOA; 
      }else{
-        //TODO 其它的类型检查
-        printf("%d: different types in assignment\n", line);
-        exit(-1);
+    // 其它情况的都是允许的而且不需要进行额外的工作 
      }
 }
 
+static void numtype_to_strtype(int num_type, char* repr)
+{
+    int type = num_type;
+    int pointer_level = 0;
+    while (type > PTR){
+       pointer_level++;
+       type -= PTR;
+    }
+
+    char* base_type = type == CHAR ?  "char" :
+                      type == INT  ?  "int"  :
+                      type == FLOAT ? "float" : "double";
+
+    strcpy(repr, base_type);
+    int start_index = strlen(base_type);
+    while (pointer_level){
+        repr[start_index++] = '*';
+        pointer_level--;
+    }
+    
+    repr[start_index] = '\0';
+}

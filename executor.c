@@ -10,7 +10,7 @@ static int* stack;
 static double* fstack;
 
 
-int interpreter_init()
+int executor_init()
 {
     //运行是会需要，该部分只要虚拟机运行就行了
     if (!(stack = malloc(STACK_SIZE * sizeof(int)))) {
@@ -75,7 +75,7 @@ static int eval(int* pc, int* sp, double *fsp) {
         //加载整型数据到ax中,原来ax中保存的是地址
         else if (op == LI)   {ax = *(int *)ax;}        
 
-        else if (op == LF)   {bx = *(double *)ax; printf("bx is %lf\n", bx);}        
+        else if (op == LF)   {bx = *(float *)ax; printf("bx is %lf\n", bx);}        
         
         else if (op == LD)   {bx = *(double *)ax;}        
 
@@ -160,9 +160,9 @@ static int eval(int* pc, int* sp, double *fsp) {
 
         //提供必要的一些公共函数
         //只要根据相应的op代码执行特定的动作就行了
-        else if (op == OPEN) { ax = open((char *)sp[1], sp[0]); }
-        else if (op == CLOS) { ax = close(*sp);}
-        else if (op == READ) { ax = read(sp[2], (char *)sp[1], *sp);}
+        //else if (op == OPEN) { ax = open((char *)sp[1], sp[0]); }
+        //else if (op == CLOS) { ax = close(*sp);}
+        //else if (op == READ) { ax = read(sp[2], (char *)sp[1], *sp);}
         //是不是printf只能处理6个参数
         else if (op == PRTF) { args = sp + pc[1]; ax = printf((char *)args[-1], args[-2], args[-3], args[-4], args[-5], args[-6]); }
         else if (op == MALC) { ax = (int)malloc(*sp);}
