@@ -10,7 +10,7 @@ extern void next();
 
 extern void match(int tk); 
 
-static Boolean is_valid_starting_character(char ch);
+static Boolean is_valid_identifier_leading_character(char ch);
 
 static Boolean is_valid_identifier_character(char ch);
 

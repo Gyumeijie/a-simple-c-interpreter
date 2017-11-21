@@ -44,11 +44,11 @@ static void expression(int level) {
             //TODO 进一步判断是否是浮点类型
 
             if (num_type == INT){
-               load_int_constant(token_val);
+               load_integral_number_constant(integral_token_val);
                expr_type = INT;
             }else{
             //TODO 加载浮点常量，浮点常量double类型存储
-               load_float_constant(token_val_float);
+               load_real_number_constant(real_token_val);
                expr_type = FLOAT;
             }
         }
@@ -57,7 +57,7 @@ static void expression(int level) {
         else if (token == '"') {
 
             *++text = IMM;
-            *++text = token_val;
+            *++text = integral_token_val;
 
             match('"');
             while (token == '"') {
@@ -288,9 +288,9 @@ static void expression(int level) {
 
             if (token == Num) {
                 if (num_type == INT || num_type == CHAR){
-                   load_int_constant(-token_val);
+                   load_integral_number_constant(-integral_token_val);
                 }else{
-                   load_float_constant(-token_val_float);
+                   load_real_number_constant(-real_token_val);
                 }
                 match(Num);
             } else {
@@ -707,6 +707,7 @@ static void expression(int level) {
                 match(Mod);
 
                 int save_type = expr_type;
+        char right_str_repr[64];
                 *++text = PUSH;
 
                 expression(Inc);
@@ -1002,7 +1003,7 @@ static void global_declaration()
             if (token != Num){
                printf("%d: bad index\n", line);
             }
-            int num = token_val;
+            int num = integral_token_val;
 
             current_id[Class] = Glo;
             //为什么current_id[Value] = (int)data就不行,可能数组的访问就是用指针
@@ -1042,9 +1043,9 @@ static void global_declaration()
                        printf("%d: bad initailzer\n", line);
                    }
 
-                   printf("token_val is %d\n", token_val);
+                   printf("token_val is %d\n", integral_token_val);
                    printf("address %p\n", array_addr+i);
-                   array_addr[i] = token_val;
+                   array_addr[i] = integral_token_val;
                    match(Num);
                    if (token == ',') {
                       match(',');
@@ -1077,18 +1078,18 @@ static void global_declaration()
 
                // 根据变量类型存储相应的值
                if (basetype == CHAR || basetype == INT){
-                   *(int*)data = (num_type == INT) ? token_val
-                                                   : (int)token_val_float;
+                   *(int*)data = (num_type == INT) ? integral_token_val :
+                                                          real_token_val;
                }else if (basetype == FLOAT){
                     // 因为可能会出现float f = 1这样的情况，所以需要判断
                     // 右边的数值是声明类型的
-                   *(float*)data = (num_type == FLOAT) ? token_val_float
-                                                        : (float)token_val;
+                   *(float*)data = (num_type == FLOAT) ? real_token_val : 
+                                                      integral_token_val;
                }
                else if (basetype == DOUBLE){
                    // 同上double d = 1
-                   *(double*)data = (num_type == FLOAT) ? token_val_float
-                                                        : (double)token_val;
+                   *(double*)data = (num_type == FLOAT) ? real_token_val :
+                                                       integral_token_val;
                }else{
                    // TODO 指针的赋值
                }
@@ -1371,7 +1372,7 @@ static int type_of_token(int token)
 
 }
 
-static void load_float_constant(double float_const)
+static void load_real_number_constant(double float_const)
 {
     //加载浮点常量
     double* addr;
@@ -1385,7 +1386,7 @@ static void load_float_constant(double float_const)
     text += 2;
 }
 
-static void load_int_constant(int int_const)
+static void load_integral_number_constant(int int_const)
 {
     *++text = IMM;
     *++text = int_const;
@@ -1433,8 +1434,8 @@ static void emit_code_for_binary_left
 
 static void emit_code_for_binary_right
 (
-   int operator_for_float,
-   int operator_for_int,
+   int operator_for_real_number,
+   int operator_for_integral_number,
    int** reserve1,
    int** reserve2
 )
@@ -1449,18 +1450,18 @@ static void emit_code_for_binary_right
            }
 
            expr_type = DOUBLE;
-           *++text = operator_for_float;  
+           *++text = operator_for_real_number;  
       }else{
           //前面的是浮点，后面是整型
           if (*reserve1 == NULL){
                //直接将ax的数值转型并存放在bx中，前面的操作数已经压人
                //fsp栈中了
                *++text = ATOB; 
-               *++text = operator_for_float;  
+               *++text = operator_for_real_number;  
                expr_type = DOUBLE;
            }else{
             //两个操作数类型都是整型的
-               *++text = operator_for_int;  
+               *++text = operator_for_integral_number;  
                expr_type = INT;
           }
      }

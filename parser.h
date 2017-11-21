@@ -37,8 +37,8 @@ static int *pc, *bp, *sp, ax, cycle; // virtual machine registers
 char *data; // data segment
 extern int *current_id; // current parsed ID
 extern int line;       // line number of source code
-extern int token_val;   // value of current token (mainly for number)
-extern double token_val_float;   // value of current token (mainly for number)
+extern int integral_token_val;   // value of current token (mainly for number)
+extern double real_token_val;   // value of current token (mainly for number)
 extern int token; // current token
 //TODO 进一步区分数值类型
 extern int num_type;
@@ -72,9 +72,9 @@ extern int parser_init();
 
 static int type_of_token(int token);
 
-static void load_float_constant(double float_const);
+static void load_real_number_constant(double float_const);
 
-static void load_int_constant(int int_const);
+static void load_integral_number_constant(int int_const);
 
 static int get_base_type(int type);
 
@@ -90,8 +90,8 @@ static void emit_code_for_binary_left ( int** reserve1, int** reserve2);
 
 static void emit_code_for_binary_right
 (
-   int operator_for_float,
-   int operator_for_int,
+   int operator_for_real_number,
+   int operator_for_integral_number,
    int** reserve1,
    int** reserve2
 );

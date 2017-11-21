@@ -18,9 +18,9 @@ enum {Global, Local, Extern};
 
 int *current_id;
 int token;
-int token_val;
+int integral_token_val;
 //新增的用来保存浮点数的
-double token_val_float;
+double real_token_val;
 int line;
 int num_type;
 extern char* data;
@@ -50,7 +50,7 @@ void next() {
         }
         
         //解析标识符
-        else if (is_valid_starting_character(token)) {
+        else if (is_valid_identifier_leading_character(token)) {
 
             last_pos = (char*)src - 1;
             hash = token;
@@ -85,26 +85,27 @@ void next() {
             return;
         }
         
-        //如果是字面量的话就计算其数值
-        //对于浮点数暂时不支持如0001.xxx的浮点数形式
+        // 如果是字面量的话就计算其数值
         else if (token >= '0' && token <= '9') {
-            num_type = INT;
 
             //保存浮点数字面量，之后用转换函数进行转换
-            char float_string[32];
+            char float_string[64];
             const char* string_begin = src;
 
-            token_val = token - '0';
-            if (token_val > 0) {
+            integral_token_val = token - '0';
+            if (integral_token_val > 0) {
                 float_string[0] = token;
                 int idx = 1;
 
                 // 十进制
                 while (*src >= '0' && *src <= '9') {
-                    token_val = token_val*10 + *src++ - '0';
+                    integral_token_val = integral_token_val*10 + *src++ - '0';
                 }
                 
-                //检测是否可能是浮点
+                num_type = INT;
+
+                // 检测是否可能是浮点，即检测下一个字符是否是'.'
+                // 对于浮点数暂时不支持如0001.xxx的浮点数形式
                 if (*src == '.'){
                     memcpy(&float_string[1], string_begin, src - string_begin);
                     idx = idx + src - string_begin;
@@ -112,7 +113,7 @@ void next() {
                     
                     process_fraction(float_string, idx + 1);
 
-                    token_val_float = strtod(float_string, NULL);
+                    real_token_val = strtod(float_string, NULL);
                     num_type = FLOAT;
                 }
 
@@ -128,23 +129,19 @@ void next() {
                         sum = sum*16 + digitalize_hex_character((char)token);
                         token = *++src;
                     }
-                    token_val = sum;
+                    integral_token_val = sum;
 
-                //TODO 增加浮点运算
                 }else if(*src == '.'){
-                    // 小数0.xxxx 
+                    // 小数0.xxxxxx形式 
                     float_string[0] = '0';
                     float_string[1] = '.';
 
                     process_fraction(float_string, 2);
             
-                    token_val_float = strtod(float_string, NULL);
+                    real_token_val = strtod(float_string, NULL);
                     num_type = FLOAT;
                 }else{
-                    // 八进制 
-                    while (*src >= '0' && *src <= '7') {
-                        token_val = token_val*8 + *src++ - '0';
-                    }
+                    // 八进制用的比较少暂时不支持
                 }
             }
 
@@ -158,7 +155,7 @@ void next() {
            float_string[0] = '.';
            process_fraction(float_string, 1);
          
-           token_val_float = strtod(float_string, NULL);
+           real_token_val = strtod(float_string, NULL);
            token = Num;
            num_type = FLOAT;
            return;
@@ -183,33 +180,33 @@ void next() {
 
             //存取字符字面量
             while (*src != 0 && *src != token) {
-                token_val = *src++;
+                integral_token_val = *src++;
                 // 处理字符串中的转义字符
-                if (token_val == '\\') {
-                    token_val = *src++;
-                    if (token_val == 'n') {
-                        token_val = '\n';
+                if (integral_token_val == '\\') {
+                    integral_token_val = *src++;
+                    if (integral_token_val == 'n') {
+                        integral_token_val = '\n';
                     }
                 }
 
                 //存放字符串常量中的字符
-                *data++ = token_val;
+                *data++ = integral_token_val;
             }
 
             src++;
-            token_val = (int)last_pos;
+            integral_token_val = (int)last_pos;
 
             return;
         }
 
         else if (token == '\''){
-            token_val = *src++;
+            integral_token_val = *src++;
         
             //处理单引号中的转义字符
-            if (token_val == '\\'){
-                token_val = *src++;
-                if (token_val == 'n') {
-                     token_val = '\n';
+            if (integral_token_val == '\\'){
+                integral_token_val = *src++;
+                if (integral_token_val == 'n') {
+                     integral_token_val = '\n';
                 }
             }
 
@@ -221,7 +218,7 @@ void next() {
             }
 
             src++;
-            // 如'c', 就返回Num，token_val以赋值为相应的ascii
+            // 如'c', 就返回Num，token_val以赋值为相应的ascii值
             token = Num; 
 
             return;
@@ -340,7 +337,7 @@ void next() {
                  token == ']' || 
                  token == ',' ||
                  token == ':') {
-            // directly return the character as token;
+            //直接将这些字符作为token返回 
             return;
         }
         else{
@@ -350,16 +347,17 @@ void next() {
 }
 
 
-void match(int tk) {
-    if (token == tk) {
+void match(int expected_token) {
+    if (token == expected_token) {
         next();
     } else {
-        printf("%d: expected token: %d\n", line, tk);
+        printf("%d: expected token: %d\n", line, expected_token);
         exit(-1);
     }
 }
 
-static Boolean is_valid_starting_character(char ch)
+
+static Boolean is_valid_identifier_leading_character(char ch)
 {
 
     if ( (ch >= 'a' && ch <= 'z') ||
@@ -375,12 +373,13 @@ static Boolean is_valid_starting_character(char ch)
 static Boolean is_valid_identifier_character(char ch)
 {
 
-    if (is_valid_starting_character(ch) || is_digit(ch)){
+    if (is_valid_identifier_leading_character(ch) || is_digit(ch)){
         return True;
     }
 
     return False;
 }
+
 
 static Boolean is_digit(char ch)
 {
