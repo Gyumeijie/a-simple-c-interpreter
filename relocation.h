@@ -8,11 +8,30 @@ struct relocation_item{
     int kind;  
 };
 
-#define MAX_RELOCATION_ITEM  32
+#define MAX_RELOCATION_ITEM  128
 static struct relocation_item relocation_items[MAX_RELOCATION_ITEM];
 
-extern void add_relocation_item(int *text_location, int offset, int kind);
-extern void do_relocation(const int* new_text_addr, const char* new_data_addr);
+extern void add_relocation_item
+(
+   int *text_location,
+   int offset, 
+   int kind
+);
+
+static void do_relocation
+(
+   const int* new_text_addr, 
+   const char* new_data_addr
+);
+
+extern int* relocation
+(
+   int* old_text_start,
+   int* old_text_end,
+   char* old_data_start,
+   char* old_data_end
+);
+
 static void reset_relocation_items();
 
 static int cur_put_item = 0;

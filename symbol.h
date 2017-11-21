@@ -8,7 +8,7 @@ enum{
     GTF, GT, LEF, LE, GEF, GE, SHL, SHR, ADDF, ADD, SUB,MULF ,MUL, DIVF, DIV, 
     MOD, NOP,
     
-    // TODO 将公共函数部分分割开来
+    //公共函数也作为指令
     OPEN, READ, CLOS, PRTF, MALC, MSET, MCMP, EXIT
 };
 
@@ -16,20 +16,19 @@ enum{
 // 标记 
 enum {
    Num = 128, Fun, Sys, Glo, Ext, Id,
-   //Char, Else, Enum, If, Int, Return, Sizeof, While,
    Char, Int, Float, Double, If, Else, While, Return
 
-   //TODO 弄清楚为什么删掉前面的东西会影响结果
-   //Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
-   //Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };
 
 enum {
-   //TODO 将操作符单独分出去
    Assign = 256, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt,
    Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
 };
-// 重定位
+
+// 重定位类型
 enum {Text_Rel, Data_Rel};
+
+// 变量类型
+enum { CHAR, INT, FLOAT, DOUBLE, PTR};
 
 #endif

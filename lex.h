@@ -4,7 +4,7 @@
 #include "symbol.h"
 #include "types.h"
 
-extern void prepare_for_tokenize(const char* src_code, int* symbol_table);
+extern void prepare_for_tokenization(const char* src_code, int* symbol_table);
 
 extern void next();
 
@@ -19,4 +19,5 @@ static Boolean is_digit(char ch);
 static void process_fraction(char* float_string, int start_idx);
 
 static int digitalize_hex_character(char ch);
+
 #endif

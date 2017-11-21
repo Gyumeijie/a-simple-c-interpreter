@@ -9,23 +9,17 @@ static int  *symbols;
 // 标识符的描述信息 
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
-// 变量或者函数类型 
-enum { CHAR, INT, FLOAT, PTR};
-
-//声明类型 
-enum {Global, Local, Extern};
-
-
 int *current_id;
 int token;
+// 保存int char等整型数
 int integral_token_val;
-//新增的用来保存浮点数的
+// 保存float double的浮点类型数
 double real_token_val;
 int line;
 int num_type;
 extern char* data;
 
-void prepare_for_tokenize(const char* src_code, int* symbol_table)
+void prepare_for_tokenization(const char* src_code, int* symbol_table)
 {
     src = src_code;
     symbols = symbol_table;
@@ -55,7 +49,6 @@ void next() {
             last_pos = (char*)src - 1;
             hash = token;
 
-            char block_keyword[32];
             while (is_valid_identifier_character(*src)) {
                 hash = hash * 147 + *src;
                 src++;

@@ -2,35 +2,17 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <string.h>
-
 #include "parser.h"
 #include "executor.h"
 #include "lex.h"
 #include "relocation.h"
 #include "dependency.h"
 
-/**
- *
- * 确定了表达式的类型expr_type
- */
-static void expression(int level) {
-    // expressions have various format.
-    // but majorly can be divided into two parts: unit and operator
-    // for example `(char) *a[10] = (int *) func(b > 0 ? 10 : 20);
-    // `a[10]` is an unit while `*` is an operator.
-    // `func(...)` in total is an unit.
-    // so we should first parse those unit and unary operators
-    // and then the binary ones
-    //
-    // also the expression can be in the following types:
-    // 表达式的BNF范式
-    // 1. unit_unary ::= unit | unit unary_op | unary_op unit
-    // 2. expr ::= unit_unary (bin_op unit_unary ...)
+static void expression(int level) 
+{
 
-    // unit_unary()
     int *id;
     int tmp;
-    int *addr;
 
     {
         if (!token) {
@@ -86,6 +68,7 @@ static void expression(int level) {
                 int num_args = 0; //实参的个数
                 while (token != ')') {
                     // 将参数压人栈中
+                    // TODO 如果参数是浮点类型的话就读不到数据了
                     expression(Assign);
                     *++text = PUSH;
                     num_args++;
@@ -137,7 +120,8 @@ static void expression(int level) {
                 else if (id[Class] == Glo) {
                     *++text = IMM;                
                     *++text = id[Value]; //id[Value]都是保存其地址
-                    add_relocation_item(text, (id[Value] - (int)data_start), Data_Rel);                    
+                    int offset = (id[Value] - (int)data_start);
+                    add_relocation_item(text, offset, Data_Rel);                    
                 }
                 else {
                     printf("%d: undefined variable\n", line);
@@ -155,6 +139,7 @@ static void expression(int level) {
         // 强制类型转换以及不同的括号分组
         else if (token == '(') {
             match('(');
+
             // 强制类型转换
             if (token == Int || token == Char || token == Float || Double) {
                 int cast_type = type_of_token(token);
@@ -380,6 +365,7 @@ static void expression(int level) {
             else if (token == Cond) {
                 // expr ? a : b;
                 match(Cond);
+                int *addr;
 
                 // 如果结果是float类型的，那么将bx中的数转型移到ax中
                 // 转型的精度损失不会影响条件的真假性
@@ -412,6 +398,8 @@ static void expression(int level) {
                 // logic or
                 match(Lor);
 
+                int *addr;
+
                 // 如果结果是float类型的，那么将bx中的数转型移到ax中
                 // 转型的精度损失不会影响条件的真假性
                 if (expr_type == FLOAT || expr_type == DOUBLE){
@@ -430,6 +418,8 @@ static void expression(int level) {
             else if (token == Lan) {
                 // logic and
                 match(Lan);
+
+                int *addr;
 
                 // 如果结果是float类型的，那么将bx中的数转型移到ax中
                 // 转型的精度损失不会影响条件的真假性
@@ -707,7 +697,6 @@ static void expression(int level) {
                 match(Mod);
 
                 int save_type = expr_type;
-        char right_str_repr[64];
                 *++text = PUSH;
 
                 expression(Inc);
@@ -1121,7 +1110,7 @@ static void global_declaration()
     next();
 }
 
-static void parse_configuration()
+static void parse_block_code()
 { 
     char* token_name;
     
@@ -1164,9 +1153,8 @@ int parser_init()
     int i, fd;
     int *tmp;
 
-    poolsize = 256 * 1024; // arbitrary size
+    poolsize = 256 * 1024;
     line = 1;
-
 
     //编译之后应该只保存text data
     // allocate memory
@@ -1175,21 +1163,12 @@ int parser_init()
         return -1;
     }
     text_start = text;
-    //printf("old code start %p\n", text_start);
     
     if (!(data = malloc(poolsize))) {
         printf("could not malloc(%d) for data area\n", poolsize);
         return -1;
     }
     data_start = data;
-    //printf("old data start %p\n", data_start);
-
-
-    //运行是会需要，该部分只要虚拟机运行就行了
-    if (!(stack = malloc(poolsize))) {
-        printf("could not malloc(%d) for stack area\n", poolsize);
-        return -1;
-    }
 
     //只是编译的时候会使用 
     if (!(symbols = malloc(poolsize))) {
@@ -1199,40 +1178,33 @@ int parser_init()
 
     memset(text, 0, poolsize);
     memset(data, 0, poolsize);
-    memset(stack, 0, poolsize);
 
-    old_text = text;
 }
 
 
 //每次编译新的代码片段的时候都需要重新设置一下符号表
 //TODO 这些是公共的部分应该只初始化一次
+//不同代码块的以及注入的符号单独成一张符号表
+//两张符号表: 公共符号表以及私有符号表
 static  void init_symbol_table()
 {
-    //有专门的符号表
     memset(symbols, 0, poolsize);
 
-    //注意这个顺序要和symbol.h中的对应起来，否则回报错误
-    //TODO 因为这个是公用的，可以考虑一下将其存放到另一个全局变量中
-    //然后和symbol.h的放在一起，让相关的东西在一起方便以后修改
+    // 注意这个顺序要和symbol.h中的对应起来，否则会报错误
+    // 然后和symbol.h的放在一起，让相关的东西在一起方便以后修改
     char* keyword = "char int float double if else while return";
+    prepare_for_tokenization(keyword, symbols); 
 
-    prepare_for_tokenize(keyword, symbols);
-
-    int i;
-
-    //关键字
-    i = Char;
+    int i = Char;
     while (i <= Return) {
         next();
         current_id[Token] = i++;
-        //printf("store %d\n", current_id[Token]);
     }
 
     // 解析src中的符号并将其加入到当前标识中，即不需要
     // 这个步骤可以作为单独的函数提炼出来，方便后面加入新的符号
     char* libfunc = "open read close printf malloc memset memcmp exit void";
-    prepare_for_tokenize(libfunc, symbols);
+    prepare_for_tokenization(libfunc, symbols);
 
     i = OPEN;
     while (i <= EXIT) {
@@ -1240,103 +1212,73 @@ static  void init_symbol_table()
         current_id[Class] = Sys;
         current_id[Type] = FLOAT;
         current_id[Value] = i++;
-        //为什么不设置Token的值
-        //这些是标识符其token号为133
     } 
 
-    next(); current_id[Token] = Char; // handle void type
-    //next(); idmain = current_id; // keep track of main
+    // 处理void类型
+    next(); current_id[Token] = Char; 
 }
 
 
-//从外面注入依赖符号
-//TODO 如果要处理多个变量的话就建议使用参数包
-int* dependency_inject
+int* compile_src_code
 (
    struct dependency_items* dep_itemsp,   
    const char* src_code
 )
 {
-
+ 
+   // 初始化符号表 
    init_symbol_table();
 
+   // 注入依赖
+   inject_dependency(dep_itemsp);
+   
+   // 解析源代码
+   prepare_for_tokenization(src_code, symbols);
 
+   // 解析代码块
+   parse_block_code();
+
+   // 手动添加退出代码
+   *++text = EXIT;
+
+   // 重定位文本段
+   int* relocated_code = relocation(text_start, text, data_start, data);
+
+   // 为编译下一个代码块初始化
+   reset_complie_environment();
+
+   return relocated_code;
+}
+
+
+static void inject_dependency(struct dependency_items* dep_itemsp)
+{
    int num_dep_items = dep_itemsp->num_items;
-   int i;
-   printf("add dependency\n");
    struct dependency* items = dep_itemsp->items;
+
+   int i;
    for (i=0; i<num_dep_items; i++){
       src = items[i].var_name;
-      prepare_for_tokenize(src, symbols);
+
+      prepare_for_tokenization(src, symbols);
+
       next();
+
       current_id[Class] = Ext;
       current_id[Type] = items[i].var_type;
       current_id[Value] = (int)items[i].var_addr;
    }
-
-        
-   //设置代码的起始地址
-   code_start = text + 1;
-   
-   //解析源代码
-   prepare_for_tokenize(src_code, symbols);
-   parse_configuration();
-
-   //手动添加退出代码
-   *++text = EXIT;
-
-   return relocation();
-
-   //return code_start;
-}
-
-void dump_text(int* text, int len)
-{
-    int i;
-    printf("dumping text\n");
-    for (i=0; i<len-1; i++) {
-       printf("%0x ", text[i]);
-    }
-    
-       printf("%0x\n", text[i]);
 }
 
 
-//计算text和data段的长度
-//为后面的重定位进行准备
-int* relocation()
+static void reset_complie_environment()
 {
-    //text当前地址是使用了的，而data当前地址是未使用的
-    actual_text_len = text - text_start + 1;
-    actual_data_len = data - data_start;
-
-    //进行字节边界对齐
-    //printf("actual_text_len %d\n", actual_text_len);
-    printf("actual_data_len %d\n", actual_data_len);
-    
-    //注意text是int为单位的，data是char为单位的
-    int* new_text = malloc(actual_text_len*sizeof(int));
-    char* new_data = malloc(actual_data_len*sizeof(char));
-    memset(new_text, 0, actual_text_len);
-    memset(new_data, 0, actual_data_len);
-    //printf("new_text %p, new_data %p\n", new_text, new_data);
-    dump_text((int*)text_start, actual_text_len);
-
-    memcpy(new_data, (void*)data_start, actual_data_len);
-    
-    do_relocation(new_text, new_data);
-
-    memcpy(new_text, (void*)text_start, actual_text_len*sizeof(int));
-    //dump_text((int*)new_text, actual_text_len);
-
-    //重置
-    memset(text, 0, poolsize);
-    memset(data, 0, poolsize);
+    memset(text, 0, (text - text_start) * sizeof(int));
+    memset(data, 0, data - data_start);
     data = (char*)data_start;
     text = (int*)text_start;
-    
-    return new_text + 1;
 }
+
 
 static int emit_store_directive(int type)
 {
@@ -1420,10 +1362,10 @@ static void emit_code_for_binary_left
 {
     printf("+ left type %d\n", expr_type);
     if (expr_type == FLOAT || expr_type == DOUBLE){
-      //将加载到bx的数压人到fsp栈中
+      // 将加载到bx的数压人到fsp栈中
         *++text = PUSF;
      }else{
-      //如果后面的表达式的类型是浮点的话，需要修改指令
+      // 如果后面的表达式的类型是浮点的话，需要修改指令
         *++text = NOP;
         *reserve1 = text;
         *++text = PUSH; 
@@ -1442,8 +1384,8 @@ static void emit_code_for_binary_right
 {
      printf("+ right type %d\n", expr_type);
      if (expr_type == FLOAT || expr_type == DOUBLE){
-         //左边的表达式如果是整型的话需要使用ATOB将ax的值转换
-         //成double类型存放bx中, 指令修改如下
+         // 左边的表达式如果是整型的话需要使用ATOB将ax的值转换
+         // 成double类型存放bx中, 指令修改如下
          if (*reserve1 != NULL){
               *(*reserve1) = ATOB;
               *(*reserve2) = PUSF;
@@ -1452,15 +1394,15 @@ static void emit_code_for_binary_right
            expr_type = DOUBLE;
            *++text = operator_for_real_number;  
       }else{
-          //前面的是浮点，后面是整型
+          // 前面的是浮点，后面是整型
           if (*reserve1 == NULL){
-               //直接将ax的数值转型并存放在bx中，前面的操作数已经压人
-               //fsp栈中了
+               // 直接将ax的数值转型并存放在bx中，前面的操作数已经压人
+               // fsp栈中了
                *++text = ATOB; 
                *++text = operator_for_real_number;  
                expr_type = DOUBLE;
            }else{
-            //两个操作数类型都是整型的
+            // 两个操作数类型都是整型的
                *++text = operator_for_integral_number;  
                expr_type = INT;
           }
@@ -1501,6 +1443,7 @@ static void check_assignment_types(int left_type, int right_type)
     // 其它情况的都是允许的而且不需要进行额外的工作 
      }
 }
+
 
 static void numtype_to_strtype(int num_type, char* repr)
 {
