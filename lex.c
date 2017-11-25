@@ -85,8 +85,10 @@ void next() {
             char float_string[64];
             const char* string_begin = src;
 
+            // 这里注意一些十进制单独0的情况
             integral_token_val = token - '0';
-            if (integral_token_val >= 0) {
+            num_type = INT;
+            if (integral_token_val > 0) {
                 float_string[0] = token;
                 int idx = 1;
 
@@ -94,8 +96,6 @@ void next() {
                 while (*src >= '0' && *src <= '9') {
                     integral_token_val = integral_token_val*10 + *src++ - '0';
                 }
-                
-                num_type = INT;
 
                 // 检测是否可能是浮点，即检测下一个字符是否是'.'
                 // 对于浮点数暂时不支持如0001.xxx的浮点数形式

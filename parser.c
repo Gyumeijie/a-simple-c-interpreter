@@ -23,10 +23,8 @@ static void expression(int level)
         // 处理数值
         if (token == Num) {
             match(Num);
-            //TODO 进一步判断是否是浮点类型
-
-            printf("num %d %lf \n", integral_token_val, real_token_val);
-            printf("type %d %d %d\n",num_type, INT, FLOAT );
+           //TODO 进一步判断是否是浮点类型
+            
             if (num_type == INT){
                load_integral_number_constant(integral_token_val);
                expr_type = INT;
