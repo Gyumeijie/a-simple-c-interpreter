@@ -81,12 +81,12 @@ void next() {
         // 如果是字面量的话就计算其数值
         else if (token >= '0' && token <= '9') {
 
-            //保存浮点数字面量，之后用转换函数进行转换
+            // 保存浮点数字面量，之后用转换函数进行转换
             char float_string[64];
             const char* string_begin = src;
 
             integral_token_val = token - '0';
-            if (integral_token_val > 0) {
+            if (integral_token_val >= 0) {
                 float_string[0] = token;
                 int idx = 1;
 

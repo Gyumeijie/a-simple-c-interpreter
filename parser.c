@@ -25,6 +25,8 @@ static void expression(int level)
             match(Num);
             //TODO 进一步判断是否是浮点类型
 
+            printf("num %d %lf \n", integral_token_val, real_token_val);
+            printf("type %d %d %d\n",num_type, INT, FLOAT );
             if (num_type == INT){
                load_integral_number_constant(integral_token_val);
                expr_type = INT;
@@ -746,24 +748,26 @@ static void expression(int level)
             else if (token == Brak) {
                 // array access var[xx]
                 match(Brak);
+                int array_type = expr_type;
+
                 *++text = PUSH; //将var的值作为地址放在栈中
                 expression(Assign);
                 match(']');
 
                 //什么时候需要将type保存到tmp
-                if (tmp > PTR) {
+                if (array_type > PTR) {
                     // pointer, `not char *`
                     *++text = PUSH; //xx的结果放在栈中(计算偏移量)
                     *++text = IMM; 
                     *++text = sizeof(int);
                     *++text = MUL; 
                 }
-                else if (tmp < PTR) {
+                else if (array_type < PTR) {
                     printf("%d: pointer type expected\n", line);
                     exit(-1);
                 }
 
-                expr_type = tmp - PTR;
+                expr_type = array_type - PTR;
                 *++text = ADD; //计算地址:首地址 + 偏移量
 
                 //a[10] 等价于 *(a + 10)
@@ -1244,7 +1248,7 @@ int* compile_src_code
    // 重定位文本段
    int* relocated_code = relocation(text_start, text, data_start, data);
 
-   // 为编译下一个代码块初始化
+   // 为编译下一个代码块初始化编译环境:text段和data段
    reset_complie_environment();
 
    return relocated_code;
@@ -1285,19 +1289,21 @@ static int emit_store_directive(int type)
    // 如果变量类型是指针类型的，先将保存其地址
    // 最后等expr_type减为其基本类型时再用正确的
    // 存储指令保存相应类型的值
-   if (type > PTR) return SI;
+   if (type >= PTR) return SI;
 
    return  (type == CHAR) ? SC : 
            (type == INT) ? SI : 
            (type == FLOAT) ? SF: SD;
 }
 
+
 static int emit_load_directive(int type)
 {
-   // 如果变量类型是指针类型的，先将加载其地址
-   // 最后等expr_type减为其基本类型时再用正确的
-   // 加载指令加载相应类型的值
-   if (type > PTR) return LI;
+   // 如果变量类型是指针类型的要先将加载其地址，最后等expr_type
+   // 减为其基本类型时再用相应的加载指令加载相应类型的值，例如
+   // f的类型是float**，那么为表达式**f产生的指令序列如下所示:
+   // IMM f_addr LI LI LF 
+   if (type >= PTR) return LI;
 
    // 处理基本类型char int float double
    return  (type == CHAR) ? LC : 
@@ -1306,6 +1312,7 @@ static int emit_load_directive(int type)
    
 }
 
+
 static int type_of_token(int token)
 {
     return (token == Char) ? CHAR : 
@@ -1313,6 +1320,7 @@ static int type_of_token(int token)
            (token == Float) ? FLOAT : DOUBLE; 
 
 }
+
 
 static void load_real_number_constant(double float_const)
 {
@@ -1323,10 +1331,11 @@ static void load_real_number_constant(double float_const)
     addr = (double*)(text + 1);
     *addr = float_const;
 
-    //内部浮点数常量使用double类型存储占两个字节
-    //变量的话有float和double类型的
+    // 内部浮点数常量使用double类型存储占8个字节，因为text是
+    // int*类型的text+2相当于是偏移了8个字节的大小
     text += 2;
 }
+
 
 static void load_integral_number_constant(int int_const)
 {
