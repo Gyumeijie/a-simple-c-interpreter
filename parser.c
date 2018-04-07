@@ -20,22 +20,22 @@ static void expression(int level)
             exit(-1);
         }
 
-        // ´¦ÀíÊıÖµ
+        // å¤„ç†æ•°å€¼
         if (token == Num) {
             match(Num);
-           //TODO ½øÒ»²½ÅĞ¶ÏÊÇ·ñÊÇ¸¡µãÀàĞÍ
+           //TODO è¿›ä¸€æ­¥åˆ¤æ–­æ˜¯å¦æ˜¯æµ®ç‚¹ç±»å‹
             
             if (num_type == INT){
                load_integral_number_constant(integral_token_val);
                expr_type = INT;
             }else{
-            //TODO ¼ÓÔØ¸¡µã³£Á¿£¬¸¡µã³£Á¿doubleÀàĞÍ´æ´¢
+            //TODO åŠ è½½æµ®ç‚¹å¸¸é‡ï¼Œæµ®ç‚¹å¸¸é‡doubleç±»å‹å­˜å‚¨
                load_real_number_constant(real_token_val);
                expr_type = FLOAT;
             }
         }
 
-        // ´¦Àí×Ö·û´®³£Á¿
+        // å¤„ç†å­—ç¬¦ä¸²å¸¸é‡
         else if (token == '"') {
 
             *++text = IMM;
@@ -46,29 +46,29 @@ static void expression(int level)
                 match('"');
             }
 
-            // ×Ö·û´®³£Á¿²»ĞèÒªÖØ¶¨Î»
-            // data¶Î³õÊ¼»¯µÄÊ±ºò¶¼Îª0£¬ËùÒÔ²»ĞèÒªÏÔÊ¾µÄÔÚÄ©Î²Ìí¼Ó'\0'£¬ÏÂÃæÊÇ
-            // ÎªÁËÊ¹µÃdata¶ÎÔÚ4×Ö½Ú±ß½çÉÏ¶ÔÆë£¬ÀıÈçÈç¹û×Ö·û´®µÄ³¤¶ÈÎª11¸ö×Ö½Ú
-            // µÄ»°£¬ÄÇÃ´¶ÔÆëºóÊµ¼Ê·ÖÅäµÄdata¿Õ¼äÊÇ12¸ö×Ö½Ú
+            // å­—ç¬¦ä¸²å¸¸é‡ä¸éœ€è¦é‡å®šä½
+            // dataæ®µåˆå§‹åŒ–çš„æ—¶å€™éƒ½ä¸º0ï¼Œæ‰€ä»¥ä¸éœ€è¦æ˜¾ç¤ºçš„åœ¨æœ«å°¾æ·»åŠ '\0'ï¼Œä¸‹é¢æ˜¯
+            // ä¸ºäº†ä½¿å¾—dataæ®µåœ¨4å­—èŠ‚è¾¹ç•Œä¸Šå¯¹é½ï¼Œä¾‹å¦‚å¦‚æœå­—ç¬¦ä¸²çš„é•¿åº¦ä¸º11ä¸ªå­—èŠ‚
+            // çš„è¯ï¼Œé‚£ä¹ˆå¯¹é½åå®é™…åˆ†é…çš„dataç©ºé—´æ˜¯12ä¸ªå­—èŠ‚
             data = (char *)(((int)data + sizeof(int)) & (-sizeof(int)));
 
             expr_type = PTR;
         }
 
-        // ´¦Àí±êÊ¶·û
+        // å¤„ç†æ ‡è¯†ç¬¦
         else if (token == Id) {
 
             match(Id);
             id = current_id;
 
-            //º¯Êıµ÷ÓÃ
+            //å‡½æ•°è°ƒç”¨
             if (token == '(') {
                 match('(');
 
-                int num_args = 0; //Êµ²ÎµÄ¸öÊı
+                int num_args = 0; //å®å‚çš„ä¸ªæ•°
                 while (token != ')') {
-                    // ½«²ÎÊıÑ¹ÈËÕ»ÖĞ
-                    // TODO Èç¹û²ÎÊıÊÇ¸¡µãÀàĞÍµÄ»°¾Í¶Á²»µ½Êı¾İÁË
+                    // å°†å‚æ•°å‹äººæ ˆä¸­
+                    // TODO å¦‚æœå‚æ•°æ˜¯æµ®ç‚¹ç±»å‹çš„è¯å°±è¯»ä¸åˆ°æ•°æ®äº†
                     expression(Assign);
                     *++text = PUSH;
                     num_args++;
@@ -80,11 +80,11 @@ static void expression(int level)
                 }
                 match(')');
 
-                // ÏµÍ³º¯Êı, id[Value]±£´æµÄÊÇº¯ÊıµÄOP´úÂë
+                // ç³»ç»Ÿå‡½æ•°, id[Value]ä¿å­˜çš„æ˜¯å‡½æ•°çš„OPä»£ç 
                 if (id[Class] == Sys) {
                     *++text = id[Value];
                 }
-                // ×Ô¶¨ÒåµÄº¯Êı
+                // è‡ªå®šä¹‰çš„å‡½æ•°
                 else if (id[Class] == Fun) {
                     *++text = CALL;
                     *++text = id[Value];
@@ -94,32 +94,32 @@ static void expression(int level)
                     exit(-1);
                 }
 
-                // Èç¹ûº¯Êıµ÷ÓÃÓĞ´«µİ²ÎÊı£¬ÄÇÃ´º¯Êı·µ»ØºóĞèÒªÇåÀíÕâĞ©²ÎÊı¶ÔÓ¦µÄ
-                // Õ»¿Õ¼ä
+                // å¦‚æœå‡½æ•°è°ƒç”¨æœ‰ä¼ é€’å‚æ•°ï¼Œé‚£ä¹ˆå‡½æ•°è¿”å›åéœ€è¦æ¸…ç†è¿™äº›å‚æ•°å¯¹åº”çš„
+                // æ ˆç©ºé—´
                 if (num_args > 0) {
                     *++text = ADJ;
                     *++text = num_args;
                 }
 
-                //±äÁ¿µÄÀàĞÍ
+                //å˜é‡çš„ç±»å‹
                 expr_type = id[Type];
             }
             else if (id[Class] == Num) {
-            // Ã¶¾ÙÀàĞÍ
+            // æšä¸¾ç±»å‹
                 *++text = IMM;
                 *++text = id[Value];
                 expr_type = INT;
             }
             else {
-            // ÆÕÍ¨±äÁ¿ 
+            // æ™®é€šå˜é‡ 
             
                 if (id[Class] == Ext) {
                     *++text = IMM;                
-                    *++text = id[Value]; //id[Value]¶¼ÊÇ±£´æÆäµØÖ·
+                    *++text = id[Value]; //id[Value]éƒ½æ˜¯ä¿å­˜å…¶åœ°å€
                 }
                 else if (id[Class] == Glo) {
                     *++text = IMM;                
-                    *++text = id[Value]; //id[Value]¶¼ÊÇ±£´æÆäµØÖ·
+                    *++text = id[Value]; //id[Value]éƒ½æ˜¯ä¿å­˜å…¶åœ°å€
                     int offset = (id[Value] - (int)data_start);
                     add_relocation_item(text, offset, Data_Rel);                    
                 }
@@ -131,16 +131,16 @@ static void expression(int level)
 
                 expr_type = id[Type];
 
-                //¸ù¾İ±äÁ¿µÄÀàĞÍÑ¡ÔñÏàÓ¦µÄ¼ÓÔØÖ¸Áî
+                //æ ¹æ®å˜é‡çš„ç±»å‹é€‰æ‹©ç›¸åº”çš„åŠ è½½æŒ‡ä»¤
                 *++text = emit_load_directive(expr_type);
             }
         }
 
-        // Ç¿ÖÆÀàĞÍ×ª»»ÒÔ¼°²»Í¬µÄÀ¨ºÅ·Ö×é
+        // å¼ºåˆ¶ç±»å‹è½¬æ¢ä»¥åŠä¸åŒçš„æ‹¬å·åˆ†ç»„
         else if (token == '(') {
             match('(');
 
-            // Ç¿ÖÆÀàĞÍ×ª»»
+            // å¼ºåˆ¶ç±»å‹è½¬æ¢
             if (token == Int || token == Char || token == Float || Double) {
                 int cast_type = type_of_token(token);
                 match(token);
@@ -150,18 +150,18 @@ static void expression(int level)
                 }
                 match(')');
 
-                //×ªĞÍµÄÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+                //è½¬å‹çš„ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
                 expression(Inc); 
 
                 check_assignment_types(cast_type, expr_type);
                 
-                // Ç¿ÖÆÀàĞÍ×ª»»ÕûÌåµÄ±í´ïÊ½µÄÀàĞÍÓ¦¸ÃºÍ×ªĞÍµÄÀàĞÍÊÇÒ»ÑùµÄÀıÈç
-                // (int **)var, ÄÇÃ´²»¹ÜvarÖ®Ç°ÊÇÊ²Ã´ÀàĞÍµÄ±äÁ¿£¬×ªĞÍºóµÄÀàĞÍ
-                // ¾ÍÊÇ(int **)
+                // å¼ºåˆ¶ç±»å‹è½¬æ¢æ•´ä½“çš„è¡¨è¾¾å¼çš„ç±»å‹åº”è¯¥å’Œè½¬å‹çš„ç±»å‹æ˜¯ä¸€æ ·çš„ä¾‹å¦‚
+                // (int **)var, é‚£ä¹ˆä¸ç®¡varä¹‹å‰æ˜¯ä»€ä¹ˆç±»å‹çš„å˜é‡ï¼Œè½¬å‹åçš„ç±»å‹
+                // å°±æ˜¯(int **)
                 expr_type  = cast_type;
 
             } else {
-            // ÆÕÍ¨µÄÀ¨ºÅ·Ö×é
+            // æ™®é€šçš„æ‹¬å·åˆ†ç»„
                 expression(Assign);
                 match(')');
             }
@@ -170,7 +170,7 @@ static void expression(int level)
         else if (token == Mul) {
             match(Mul);
 
-            //½âÒıÓÃµÄÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+            //è§£å¼•ç”¨çš„ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
             expression(Inc); 
 
             printf("expr_type %d\n", expr_type);
@@ -182,7 +182,7 @@ static void expression(int level)
             }
 
             //float** f;   1.0 + **f
-            //ÄÇÃ´Í¨¹ıLoad²Ù×÷Öğ²½½âÒıÓÃaddr (LI) (LF)
+            //é‚£ä¹ˆé€šè¿‡Loadæ“ä½œé€æ­¥è§£å¼•ç”¨addr (LI) (LF)
             //
             *++text = emit_load_directive(expr_type); 
         }
@@ -190,13 +190,13 @@ static void expression(int level)
         else if (token == And) {
             match(And);
 
-            //È¡µØÖ·µÄÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+            //å–åœ°å€çš„ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
             expression(Inc); 
 
-            //Èç¹ûÊÇ&varµÄ»°£¬Ö±½ÓÍ¨¹ıload²Ù×÷Ç°ÃæµÄIMM²Ù×÷¾Í¿ÉÒÔ¼ÓÔØÆäµØÖ·ÁË
-            //"&"ºóÃæµÄÖ»ÄÜÊÇ±äÁ¿¶ø²»ÄÜÊÇ³£Á¿£¬µ«ÊÇÕâÀï´æÔÚÒ»¸öbug: Èç¹û&const
-            //¶øÕâ¸öconstµÄÊıÖµÇ¡ºÃÊÇLC LI LFºÍLDÆäÖĞÒ»¸ö£¬ËùÒÔÎªÁË±£ÏÕÆğ¼û¼ÓÉÏ
-            //¶ÔÕâÖÖÇé¿öµÄÅĞ¶Ï;Æä´Î&µÄÓÅÏÈ¼¶±È½Ï¸ßËùÒÔÏñ&(1+2)Ö®ÀàµÄ¶¼ÊÇ²»ºÏ·¨µÄ
+            //å¦‚æœæ˜¯&varçš„è¯ï¼Œç›´æ¥é€šè¿‡loadæ“ä½œå‰é¢çš„IMMæ“ä½œå°±å¯ä»¥åŠ è½½å…¶åœ°å€äº†
+            //"&"åé¢çš„åªèƒ½æ˜¯å˜é‡è€Œä¸èƒ½æ˜¯å¸¸é‡ï¼Œä½†æ˜¯è¿™é‡Œå­˜åœ¨ä¸€ä¸ªbug: å¦‚æœ&const
+            //è€Œè¿™ä¸ªconstçš„æ•°å€¼æ°å¥½æ˜¯LC LI LFå’ŒLDå…¶ä¸­ä¸€ä¸ªï¼Œæ‰€ä»¥ä¸ºäº†ä¿é™©èµ·è§åŠ ä¸Š
+            //å¯¹è¿™ç§æƒ…å†µçš„åˆ¤æ–­;å…¶æ¬¡&çš„ä¼˜å…ˆçº§æ¯”è¾ƒé«˜æ‰€ä»¥åƒ&(1+2)ä¹‹ç±»çš„éƒ½æ˜¯ä¸åˆæ³•çš„
             if (!does_operate_on_constant() &&
                  (*text == LC || *text == LI || *text == LF || *text == LD)){
                 text--;
@@ -211,12 +211,12 @@ static void expression(int level)
         else if (token == '!') {
             match('!');
 
-            //Âß¼­·ÇµÄÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+            //é€»è¾‘éçš„ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
             expression(Inc);
 
-            // Ê¹ÓÃexpr == 0 ½øĞĞÅĞ¶Ï
-            // Èç¹ûÊÇ"!"ºóÃæµÄ±í´ïÊ½ÀàĞÍÊÇ¸¡µãÀàĞÍ£¬Ôò½«bx¼Ä´æÆ÷ÖĞµÄÊı×ªĞÍ³ÉÕû
-            // ĞÍ²¢·ÅÖÃÔÚaxÖĞÖ¸ÁîBTOA¾ÍÊÇÕâ¸ö×÷ÓÃ
+            // ä½¿ç”¨expr == 0 è¿›è¡Œåˆ¤æ–­
+            // å¦‚æœæ˜¯"!"åé¢çš„è¡¨è¾¾å¼ç±»å‹æ˜¯æµ®ç‚¹ç±»å‹ï¼Œåˆ™å°†bxå¯„å­˜å™¨ä¸­çš„æ•°è½¬å‹æˆæ•´
+            // å‹å¹¶æ”¾ç½®åœ¨axä¸­æŒ‡ä»¤BTOAå°±æ˜¯è¿™ä¸ªä½œç”¨
             if (expr_type == FLOAT || expr_type == DOUBLE){
                 *++text = BTOA;                
             }
@@ -226,7 +226,7 @@ static void expression(int level)
             *++text = 0;
             *++text = EQ;
 
-            //×îºóÕû¸ö±í´ïÊ½(!<expr>)µÄÀàĞÍÊÇINT
+            //æœ€åæ•´ä¸ªè¡¨è¾¾å¼(!<expr>)çš„ç±»å‹æ˜¯INT
             expr_type = INT;
         }
 
@@ -234,16 +234,16 @@ static void expression(int level)
             // bitwise not
             match('~');
 
-            //°´Î»·ÇµÄÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+            //æŒ‰ä½éçš„ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
             expression(Inc); 
         
-            //Î»²Ù×÷µÄ»°±í´ïÊ½µÄÀàĞÍÒ»¶¨ÒªÕıÈ·£¬Òò´ËĞèÒª¼ì²éÒ»Ğ©ÀàĞÍ
+            //ä½æ“ä½œçš„è¯è¡¨è¾¾å¼çš„ç±»å‹ä¸€å®šè¦æ­£ç¡®ï¼Œå› æ­¤éœ€è¦æ£€æŸ¥ä¸€äº›ç±»å‹
             if (expr_type == FLOAT || expr_type == DOUBLE){
                 printf("%d: wrong type argument to bit-complement\n", line);
                 exit(-1); 
             }
 
-            //Ê¹ÓÃ<expr> XOR -1À´Ê±ÊµÏÖ°´Î»·Ç£¬¾ßÌåÏ¸½ÚÈçÏÂ
+            //ä½¿ç”¨<expr> XOR -1æ¥æ—¶å®ç°æŒ‰ä½éï¼Œå…·ä½“ç»†èŠ‚å¦‚ä¸‹
             //(1111 1111)  -1
             //(0110 0011)  XOR
             //______________
@@ -254,17 +254,17 @@ static void expression(int level)
             *++text = -1;
             *++text = XOR;
 
-            //×îºóÕû¸ö±í´ïÊ½(~<expr>)µÄÀàĞÍÊÇINT
+            //æœ€åæ•´ä¸ªè¡¨è¾¾å¼(~<expr>)çš„ç±»å‹æ˜¯INT
             expr_type = INT;
         }
         else if (token == Add) {
-            // +var, ²»×öÊµ¼ÊµÄ²Ù×÷
+            // +var, ä¸åšå®é™…çš„æ“ä½œ
             match(Add);
 
-            //ÕıºÅÓÅÏÈ¼¶ºÍInc(++)Ò»Ñù
+            //æ­£å·ä¼˜å…ˆçº§å’ŒInc(++)ä¸€æ ·
             expression(Inc);
 
-            //×îºóÕû¸ö±í´ïÊ½(+<expr>)µÄÀàĞÍºÍ<expr>ÏàÍ¬
+            //æœ€åæ•´ä¸ªè¡¨è¾¾å¼(+<expr>)çš„ç±»å‹å’Œ<expr>ç›¸åŒ
             expr_type = expr_type;
         }
         else if (token == Sub) {
@@ -299,7 +299,7 @@ static void expression(int level)
                 exit(-1);
             } 
 
-            // ÔİÊ±²»Ö§³Ö¸¡µãÀàĞÍµÄ±äÁ¿(°üÀ¨Ö¸ÕëÀàĞÍ)++»ò--²Ù×÷
+            // æš‚æ—¶ä¸æ”¯æŒæµ®ç‚¹ç±»å‹çš„å˜é‡(åŒ…æ‹¬æŒ‡é’ˆç±»å‹)++æˆ–--æ“ä½œ
             if (get_base_type(expr_type) > INT){
                 printf("%d: sorry, Inc or Dec is not supported for floating\n",
                       line);
@@ -331,18 +331,18 @@ static void expression(int level)
     }
  
 
-    //´¦Àí¶şÔª²Ù×÷·ûÒÔ¼°ºó×º²Ù×÷·û
+    //å¤„ç†äºŒå…ƒæ“ä½œç¬¦ä»¥åŠåç¼€æ“ä½œç¬¦
     {
-        // ¸ù¾İµ±Ç°µÄ²Ù×÷·ûÓÅÏÈ¼¶½øĞĞ²Ù×÷
+        // æ ¹æ®å½“å‰çš„æ“ä½œç¬¦ä¼˜å…ˆçº§è¿›è¡Œæ“ä½œ
         while (token >= level) {
             int left_type = expr_type;
             if (token == Assign) {
                 // var = expr;
                 match(Assign);
 
-                // ±äÁ¿Èç¹ûÊÇ³äµ±×óÖµ»°¾ÍĞŞ¸ÄÖ¸Áî£¬Ê¹ÓÃPUSHÖ¸Áî±£´æÆäµØÖ·
-                // Èç¹ûÊÇÓÃ×÷ÓÒÖµµÄ»°£¬¾ÍÊ¹ÓÃLoadÖ¸Áî¼ÓÔØ
-                // ×óÖµ²»ÊÇ±äÁ¿£¬±¨´í
+                // å˜é‡å¦‚æœæ˜¯å……å½“å·¦å€¼è¯å°±ä¿®æ”¹æŒ‡ä»¤ï¼Œä½¿ç”¨PUSHæŒ‡ä»¤ä¿å­˜å…¶åœ°å€
+                // å¦‚æœæ˜¯ç”¨ä½œå³å€¼çš„è¯ï¼Œå°±ä½¿ç”¨LoadæŒ‡ä»¤åŠ è½½
+                // å·¦å€¼ä¸æ˜¯å˜é‡ï¼ŒæŠ¥é”™
                 if (*text == LC || *text == LI || *text == LF || *text == LD) {   
                     *text = PUSH; 
                 } else {
@@ -350,14 +350,14 @@ static void expression(int level)
                     exit(-1);
                 }
 
-                // È»ºó¼ÆËãÓÒ±ß±í´ïÊ½µÄÖµ£¬²¢½«½á¹û±£´æµ½ax»òÕßbx
+                // ç„¶åè®¡ç®—å³è¾¹è¡¨è¾¾å¼çš„å€¼ï¼Œå¹¶å°†ç»“æœä¿å­˜åˆ°axæˆ–è€…bx
                 expression(Assign);
 
-                //ÀàĞÍ¼æÈİµÄº¯Êı
+                //ç±»å‹å…¼å®¹çš„å‡½æ•°
                 printf("assign left %d , right %d\n", left_type, expr_type);
                 check_assignment_types(left_type, expr_type);
 
-                //Èç¹ûÁ½¸öÊÇÀàĞÍ¼æÈİµÄ»°£¬ÄÇÃ´Õû¸ö±í´ïÊ½µÄÀàĞÍ¾ÍÊÇ×ó²Ù×÷ÊıµÄÀàĞÍ
+                //å¦‚æœä¸¤ä¸ªæ˜¯ç±»å‹å…¼å®¹çš„è¯ï¼Œé‚£ä¹ˆæ•´ä¸ªè¡¨è¾¾å¼çš„ç±»å‹å°±æ˜¯å·¦æ“ä½œæ•°çš„ç±»å‹
                 expr_type = left_type; 
                 *++text = emit_store_directive(expr_type);
             }
@@ -367,8 +367,8 @@ static void expression(int level)
                 match(Cond);
                 int *addr;
 
-                // Èç¹û½á¹ûÊÇfloatÀàĞÍµÄ£¬ÄÇÃ´½«bxÖĞµÄÊı×ªĞÍÒÆµ½axÖĞ
-                // ×ªĞÍµÄ¾«¶ÈËğÊ§²»»áÓ°ÏìÌõ¼şµÄÕæ¼ÙĞÔ
+                // å¦‚æœç»“æœæ˜¯floatç±»å‹çš„ï¼Œé‚£ä¹ˆå°†bxä¸­çš„æ•°è½¬å‹ç§»åˆ°axä¸­
+                // è½¬å‹çš„ç²¾åº¦æŸå¤±ä¸ä¼šå½±å“æ¡ä»¶çš„çœŸå‡æ€§
                 if (expr_type == FLOAT || expr_type == DOUBLE){
                   *++text = BTOA;
                 }
@@ -400,8 +400,8 @@ static void expression(int level)
 
                 int *addr;
 
-                // Èç¹û½á¹ûÊÇfloatÀàĞÍµÄ£¬ÄÇÃ´½«bxÖĞµÄÊı×ªĞÍÒÆµ½axÖĞ
-                // ×ªĞÍµÄ¾«¶ÈËğÊ§²»»áÓ°ÏìÌõ¼şµÄÕæ¼ÙĞÔ
+                // å¦‚æœç»“æœæ˜¯floatç±»å‹çš„ï¼Œé‚£ä¹ˆå°†bxä¸­çš„æ•°è½¬å‹ç§»åˆ°axä¸­
+                // è½¬å‹çš„ç²¾åº¦æŸå¤±ä¸ä¼šå½±å“æ¡ä»¶çš„çœŸå‡æ€§
                 if (expr_type == FLOAT || expr_type == DOUBLE){
                   *++text = BTOA;
                 }
@@ -421,8 +421,8 @@ static void expression(int level)
 
                 int *addr;
 
-                // Èç¹û½á¹ûÊÇfloatÀàĞÍµÄ£¬ÄÇÃ´½«bxÖĞµÄÊı×ªĞÍÒÆµ½axÖĞ
-                // ×ªĞÍµÄ¾«¶ÈËğÊ§²»»áÓ°ÏìÌõ¼şµÄÕæ¼ÙĞÔ
+                // å¦‚æœç»“æœæ˜¯floatç±»å‹çš„ï¼Œé‚£ä¹ˆå°†bxä¸­çš„æ•°è½¬å‹ç§»åˆ°axä¸­
+                // è½¬å‹çš„ç²¾åº¦æŸå¤±ä¸ä¼šå½±å“æ¡ä»¶çš„çœŸå‡æ€§
                 if (expr_type == FLOAT || expr_type == DOUBLE){
                   *++text = BTOA;
                 }
@@ -443,7 +443,7 @@ static void expression(int level)
                 *++text = PUSH;
                 expression(Xor);
 
-               //Î»²Ù×÷µÄ»°±í´ïÊ½µÄÀàĞÍÒ»¶¨ÒªÕıÈ·£¬Òò´ËĞèÒª¼ì²éÒ»Ğ©ÀàĞÍ
+               //ä½æ“ä½œçš„è¯è¡¨è¾¾å¼çš„ç±»å‹ä¸€å®šè¦æ­£ç¡®ï¼Œå› æ­¤éœ€è¦æ£€æŸ¥ä¸€äº›ç±»å‹
                if (expr_type == FLOAT || expr_type == DOUBLE){
                    printf("%d: wrong type argument to bitwise or\n", line);
                    exit(-1); 
@@ -458,7 +458,7 @@ static void expression(int level)
                 *++text = PUSH;
                 expression(And);
 
-                //Î»²Ù×÷µÄ»°±í´ïÊ½µÄÀàĞÍÒ»¶¨ÒªÕıÈ·£¬Òò´ËĞèÒª¼ì²éÒ»Ğ©ÀàĞÍ
+                //ä½æ“ä½œçš„è¯è¡¨è¾¾å¼çš„ç±»å‹ä¸€å®šè¦æ­£ç¡®ï¼Œå› æ­¤éœ€è¦æ£€æŸ¥ä¸€äº›ç±»å‹
                 if (expr_type == FLOAT || expr_type == DOUBLE){
                    printf("%d: wrong type argument to bitwise xor\n", line);
                    exit(-1); 
@@ -473,7 +473,7 @@ static void expression(int level)
                 *++text = PUSH;
                 expression(Eq);
 
-                //Î»²Ù×÷µÄ»°±í´ïÊ½µÄÀàĞÍÒ»¶¨ÒªÕıÈ·£¬Òò´ËĞèÒª¼ì²éÒ»Ğ©ÀàĞÍ
+                //ä½æ“ä½œçš„è¯è¡¨è¾¾å¼çš„ç±»å‹ä¸€å®šè¦æ­£ç¡®ï¼Œå› æ­¤éœ€è¦æ£€æŸ¥ä¸€äº›ç±»å‹
                 if (expr_type == FLOAT || expr_type == DOUBLE){
                    printf("%d: wrong type argument to bitwise xor\n", line);
                    exit(-1); 
@@ -580,7 +580,7 @@ static void expression(int level)
                 *++text = PUSH;
                 expression(Add);
 
-                // Á½²àµÄ²Ù×÷ÊıÖ»ÄÜÊÇcharÒÔ¼°intĞÍµÄ
+                // ä¸¤ä¾§çš„æ“ä½œæ•°åªèƒ½æ˜¯charä»¥åŠintå‹çš„
                 if ((save_type == FLOAT || save_type == DOUBLE) ||
                     (expr_type == FLOAT || save_type == DOUBLE)){
                    printf("%d: wrong type argument to shift left\n", line);
@@ -599,7 +599,7 @@ static void expression(int level)
                 *++text = PUSH;
                 expression(Add);
 
-                // Á½²àµÄ²Ù×÷ÊıÖ»ÄÜÊÇcharÒÔ¼°intĞÍµÄ
+                // ä¸¤ä¾§çš„æ“ä½œæ•°åªèƒ½æ˜¯charä»¥åŠintå‹çš„
                 if ((save_type == FLOAT || save_type == DOUBLE) ||
                     (expr_type == FLOAT || save_type == DOUBLE)){
                    printf("%d: wrong type argument to shitf right\n", line);
@@ -610,7 +610,7 @@ static void expression(int level)
                 
                 expr_type = INT;
             }
-            //TODO ÏÈ³¢ÊÔÈÃ¸¡µãµÄ¼Ó·¨²Ù×÷Õı³£¹¤×÷ 
+            //TODO å…ˆå°è¯•è®©æµ®ç‚¹çš„åŠ æ³•æ“ä½œæ­£å¸¸å·¥ä½œ 
             else if (token == Add) {
                 // add
                 match(Add);
@@ -618,12 +618,12 @@ static void expression(int level)
                 int *reserve1 = NULL, *reserve2 = NULL;
                 emit_code_for_binary_left(&reserve1, &reserve2);
 
-                //¼ÆËã±í´ïÊ½ÓÒ±ßµÄÖµ
+                //è®¡ç®—è¡¨è¾¾å¼å³è¾¹çš„å€¼
                 expression(Mul);
                 
                 printf("+ right type %d\n", expr_type);
                 //TODO expr_type = tmp;
-                //Èç¹û²Ù×÷ÊıÊÇÖ¸ÕëÀàĞÍµÄ»°
+                //å¦‚æœæ“ä½œæ•°æ˜¯æŒ‡é’ˆç±»å‹çš„è¯
                 if (expr_type > PTR) { 
                     *++text = PUSH;
                     *++text = IMM;
@@ -700,7 +700,7 @@ static void expression(int level)
                 *++text = PUSH;
 
                 expression(Inc);
-                // Ö»ÓĞÁ½¸öÊıÊÇÕûĞÍÊı(CHAR»òINT)²Å¿ÉÒÔ
+                // åªæœ‰ä¸¤ä¸ªæ•°æ˜¯æ•´å‹æ•°(CHARæˆ–INT)æ‰å¯ä»¥
                 if (!((save_type == INT || save_type == CHAR) &&
                       (expr_type == INT || expr_type == CHAR))){
                      printf("%d:invalid operands to binary\n", line);
@@ -742,20 +742,20 @@ static void expression(int level)
                 match(token);
             }
 
-            //Êı×éµÄ·ÃÎÊ,µ«ÊÇºÃÏñÃ»ÓĞÊı×éµÄÉùÃ÷
+            //æ•°ç»„çš„è®¿é—®,ä½†æ˜¯å¥½åƒæ²¡æœ‰æ•°ç»„çš„å£°æ˜
             else if (token == Brak) {
                 // array access var[xx]
                 match(Brak);
                 int array_type = expr_type;
 
-                *++text = PUSH; //½«varµÄÖµ×÷ÎªµØÖ··ÅÔÚÕ»ÖĞ
+                *++text = PUSH; //å°†varçš„å€¼ä½œä¸ºåœ°å€æ”¾åœ¨æ ˆä¸­
                 expression(Assign);
                 match(']');
 
-                //Ê²Ã´Ê±ºòĞèÒª½«type±£´æµ½tmp
+                //ä»€ä¹ˆæ—¶å€™éœ€è¦å°†typeä¿å­˜åˆ°tmp
                 if (array_type > PTR) {
                     // pointer, `not char *`
-                    *++text = PUSH; //xxµÄ½á¹û·ÅÔÚÕ»ÖĞ(¼ÆËãÆ«ÒÆÁ¿)
+                    *++text = PUSH; //xxçš„ç»“æœæ”¾åœ¨æ ˆä¸­(è®¡ç®—åç§»é‡)
                     *++text = IMM; 
                     *++text = sizeof(int);
                     *++text = MUL; 
@@ -766,9 +766,9 @@ static void expression(int level)
                 }
 
                 expr_type = array_type - PTR;
-                *++text = ADD; //¼ÆËãµØÖ·:Ê×µØÖ· + Æ«ÒÆÁ¿
+                *++text = ADD; //è®¡ç®—åœ°å€:é¦–åœ°å€ + åç§»é‡
 
-                //a[10] µÈ¼ÛÓÚ *(a + 10)
+                //a[10] ç­‰ä»·äº *(a + 10)
                 //LC load char; LI load int
                 *++text = (expr_type == CHAR) ? LC : LI;
             }
@@ -787,13 +787,13 @@ static void statement() {
     int *a, *b; 
 
     if (token == If) {
-        // ÎªifÓï¾ä²úÉúµÄ»ã±à´úÂë£¬²»ÏñgccµÈÕı¹æ±àÒëÆ÷»á½øĞĞÒ»ÏµÁĞµÄÓÅ»¯²Ù×÷
+        // ä¸ºifè¯­å¥äº§ç”Ÿçš„æ±‡ç¼–ä»£ç ï¼Œä¸åƒgccç­‰æ­£è§„ç¼–è¯‘å™¨ä¼šè¿›è¡Œä¸€ç³»åˆ—çš„ä¼˜åŒ–æ“ä½œ
         // if (...) <statement> [else <statement>]
-        //                     //°´ÕÕË³ĞòÀ´
+        //                     //æŒ‰ç…§é¡ºåºæ¥
         //   if (...)           <cond>  
         //                      JZ a    
         //     <statement>      <statement>
-        //   else:              JMP b //Ìø¹ıelse²¿·Ö
+        //   else:              JMP b //è·³è¿‡elseéƒ¨åˆ†
         // a:
         //     <statement>      <statement>
         // b:                   b:
@@ -801,48 +801,48 @@ static void statement() {
         
         match(If);
         match('(');
-        //½âÎöÌõ¼ş
+        //è§£ææ¡ä»¶
         expression(Assign);  
         match(')');
 
-        // Èç¹û½á¹ûÊÇfloatÀàĞÍµÄ£¬ÄÇÃ´½«bxÖĞµÄÊı×ªĞÍÒÆµ½axÖĞ
-        // ×ªĞÍµÄ¾«¶ÈËğÊ§²»»áÓ°ÏìÌõ¼şµÄÕæ¼ÙĞÔ
+        // å¦‚æœç»“æœæ˜¯floatç±»å‹çš„ï¼Œé‚£ä¹ˆå°†bxä¸­çš„æ•°è½¬å‹ç§»åˆ°axä¸­
+        // è½¬å‹çš„ç²¾åº¦æŸå¤±ä¸ä¼šå½±å“æ¡ä»¶çš„çœŸå‡æ€§
         if (expr_type == FLOAT || expr_type == DOUBLE){
                *++text = BTOA;
          }
 
         *++text = JZ;
-        b = ++text; //ÏÈÎª±êºÅb·ÖÅäÒ»¸öµØÖ·¿Õ¼ä
+        b = ++text; //å…ˆä¸ºæ ‡å·båˆ†é…ä¸€ä¸ªåœ°å€ç©ºé—´
 
-        //½âÎöifÖĞµÄÓï¾ä
-        statement(); //Ìø¹ıÕâĞ©Ï¸½Ú     
+        //è§£æifä¸­çš„è¯­å¥
+        statement(); //è·³è¿‡è¿™äº›ç»†èŠ‚     
 
         int offset;
-        //½âÎöelse²¿·Ö
+        //è§£æelseéƒ¨åˆ†
         if (token == Else) { 
-            //match°üº¬ÁËnext²Ù×÷, Èç¹ûÓĞelse ifÄÇÃ´statement()ºó¾Í»áÆ¥Åäif
+            //matchåŒ…å«äº†nextæ“ä½œ, å¦‚æœæœ‰else ifé‚£ä¹ˆstatement()åå°±ä¼šåŒ¹é…if
             match(Else);
 
             // emit code for JMP B
-            // TODO ÕâÀïĞèÒªÖØ¶¨Î»location: b, offset: text+3 - text_start
+            // TODO è¿™é‡Œéœ€è¦é‡å®šä½location: b, offset: text+3 - text_start
             offset = (text + 3 - text_start)*sizeof(int);
             add_relocation_item(b, offset, Text_Rel);
             *b = (int)(text + 3);
             *++text = JMP;
             b = ++text;
 
-            statement(); //Ìø¹ıÕâĞ©Ï¸½Ú
+            statement(); //è·³è¿‡è¿™äº›ç»†èŠ‚
         }
 
 
-        // TODO ÕâÀïĞèÒªÖØ¶¨Î»location: b, offset: text+1 - text_start
+        // TODO è¿™é‡Œéœ€è¦é‡å®šä½location: b, offset: text+1 - text_start
         offset = (text + 1 - text_start)*sizeof(int);
         add_relocation_item(b, offset, Text_Rel);
-        *b = (int)(text + 1); //±àÒëÍêºóÔÙÌî³ä±êºÅbµÄÄÚÈİ
+        *b = (int)(text + 1); //ç¼–è¯‘å®Œåå†å¡«å……æ ‡å·bçš„å†…å®¹
     }
 
 
-    //TODO ÊµÏÖbreak, continue
+    //TODO å®ç°break, continue
     else if (token == While) {
         //
         // a:                     a:
@@ -853,23 +853,23 @@ static void statement() {
         // b:                     b:
         match(While);
 
-        a = text + 1; //a¿ªÊ¼½«´æ·Å<cond>
+        a = text + 1; //aå¼€å§‹å°†å­˜æ”¾<cond>
 
         match('(');
         expression(Assign);
         match(')');
 
-        // Èç¹û½á¹ûÊÇfloatÀàĞÍµÄ£¬ÄÇÃ´½«bxÖĞµÄÊı×ªĞÍÒÆµ½axÖĞ
-        // ×ªĞÍµÄ¾«¶ÈËğÊ§²»»áÓ°ÏìÌõ¼şµÄÕæ¼ÙĞÔ
+        // å¦‚æœç»“æœæ˜¯floatç±»å‹çš„ï¼Œé‚£ä¹ˆå°†bxä¸­çš„æ•°è½¬å‹ç§»åˆ°axä¸­
+        // è½¬å‹çš„ç²¾åº¦æŸå¤±ä¸ä¼šå½±å“æ¡ä»¶çš„çœŸå‡æ€§
         if (expr_type == FLOAT || expr_type == DOUBLE){
               *++text = BTOA;
         }
 
         *++text = JZ;
-        b = ++text; //ÏÈÎª±êºÅb·ÖÅäÒ»¸öµØÖ·¿Õ¼ä
+        b = ++text; //å…ˆä¸ºæ ‡å·båˆ†é…ä¸€ä¸ªåœ°å€ç©ºé—´
 
-        //TODO ½«Á½¸ö±êºÅ´ò°üÑ¹Èë¶ÑÕ»ÖĞ£¨Ö÷ÒªÊÇÎªÁËwhileÑ­»·£©
-        //Èç¹û¶ÑÕ»Îª¿ÕµÄÊ±ºò£¬¼´´ËÊ±µÄ»·¾³²»ÊÇÔÚwhileÑ­»·ÖĞ£¬ÄÇÃ´±¨´í
+        //TODO å°†ä¸¤ä¸ªæ ‡å·æ‰“åŒ…å‹å…¥å †æ ˆä¸­ï¼ˆä¸»è¦æ˜¯ä¸ºäº†whileå¾ªç¯ï¼‰
+        //å¦‚æœå †æ ˆä¸ºç©ºçš„æ—¶å€™ï¼Œå³æ­¤æ—¶çš„ç¯å¢ƒä¸æ˜¯åœ¨whileå¾ªç¯ä¸­ï¼Œé‚£ä¹ˆæŠ¥é”™
         //start_label1: ,  end_label2: 
         //start_label2: ,  end_label2: 
         
@@ -877,24 +877,24 @@ static void statement() {
 
         int offset;
 
-        //Ïàµ±ÓÚcontinue
+        //ç›¸å½“äºcontinue
         *++text = JMP;
-        //TODO ÕâÀïĞèÒªÒ»¸öÖØ¶¨Î»location:text, offset=a - text_start 
+        //TODO è¿™é‡Œéœ€è¦ä¸€ä¸ªé‡å®šä½location:text, offset=a - text_start 
         *++text = (int)a;
         offset = (a - text_start)*sizeof(int);
         add_relocation_item(text, offset, Text_Rel);
 
 
-        //Ïàµ±ÓÚbreak
-        //±àÒëÍêºóÔÚÌî³ä±êºÅbµÄÄÚÈİ, b¿ªÊ¼´æ·ÅÆäËüÃüÁî
-        //TODO ÕâÀïÒ²ĞèÒªÒ»¸öÖØ¶¨Î»location:b, offset=text+1-text_start
+        //ç›¸å½“äºbreak
+        //ç¼–è¯‘å®Œååœ¨å¡«å……æ ‡å·bçš„å†…å®¹, bå¼€å§‹å­˜æ”¾å…¶å®ƒå‘½ä»¤
+        //TODO è¿™é‡Œä¹Ÿéœ€è¦ä¸€ä¸ªé‡å®šä½location:b, offset=text+1-text_start
 
         offset = (text + 1 - text_start)*sizeof(int);
         add_relocation_item(b, offset, Text_Rel);
-        *b = (int)(text + 1); //b¿ªÊ¼´æ·ÅÆäËüÃüÁî
+        *b = (int)(text + 1); //bå¼€å§‹å­˜æ”¾å…¶å®ƒå‘½ä»¤
     }
 
-    //Æ¥Åäif/whileÖĞµÄÓï¾ä
+    //åŒ¹é…if/whileä¸­çš„è¯­å¥
     else if (token == '{') {
         // { <statement> ... }
         match('{');
@@ -937,7 +937,7 @@ static void statement() {
 
 static void global_declaration() 
 {
-    // ½âÎö±äÁ¿ÉùÃ÷µÄÀàĞÍ
+    // è§£æå˜é‡å£°æ˜çš„ç±»å‹
     if (token == Int) {
         match(Int);
         basetype = INT;
@@ -959,36 +959,36 @@ static void global_declaration()
     }
 
 
-    // ½âÎö¿ÉÓÉ¶ººÅ·Ö¸îµÄ±äÁ¿ÉùÃ÷ 
+    // è§£æå¯ç”±é€—å·åˆ†å‰²çš„å˜é‡å£°æ˜ 
     while (token != ';' && token != '}') {
         int final_type = basetype;
 
-        // ½âÎöÖ¸ÕëÀàĞÍ£¬ÒòÎª»á´æÔÚÈç "int ****var;" µÄ¶à¼¶Ö¸ÕëÉùÃ÷ĞèÒªÓÃÒ»¸öÑ­
-        // »·À´½âÎö£¬×¢ÒâÒòÎªÔÚ´Ê·¨·ÖÎö½×¶Î½âÎö±êÊ¶·ûµÄÊ±ºòÓöµ½·Ç±êÊ¶·ûµÄ×Ö·û
-        // ¾Í»áÍ£Ö¹ÏÂÀ´£¬Òò´Ë "int**** var;" ÕâÖÖĞÎÊ½Ò²ÊÇ¿ÉÒÔµÄ
+        // è§£ææŒ‡é’ˆç±»å‹ï¼Œå› ä¸ºä¼šå­˜åœ¨å¦‚ "int ****var;" çš„å¤šçº§æŒ‡é’ˆå£°æ˜éœ€è¦ç”¨ä¸€ä¸ªå¾ª
+        // ç¯æ¥è§£æï¼Œæ³¨æ„å› ä¸ºåœ¨è¯æ³•åˆ†æé˜¶æ®µè§£ææ ‡è¯†ç¬¦çš„æ—¶å€™é‡åˆ°éæ ‡è¯†ç¬¦çš„å­—ç¬¦
+        // å°±ä¼šåœæ­¢ä¸‹æ¥ï¼Œå› æ­¤ "int**** var;" è¿™ç§å½¢å¼ä¹Ÿæ˜¯å¯ä»¥çš„
         while (token == Mul) {
             match(Mul);
             final_type = final_type + PTR;
         }
 
         if (token != Id) {
-            // Èç¹û¼ÇºÅ²»ÊÇ±êÊ¶·ûµÄ»°ÔòÎª·Ç·¨ÉùÃ÷
+            // å¦‚æœè®°å·ä¸æ˜¯æ ‡è¯†ç¬¦çš„è¯åˆ™ä¸ºéæ³•å£°æ˜
             printf("%d: bad global declaration\n", line);
             exit(-1);
         }
         if (current_id[Class]) {
-            // ±êÊ¶·ûÒÑ¾­´æÔÚ
+            // æ ‡è¯†ç¬¦å·²ç»å­˜åœ¨
             printf("%d: duplicate global declaration\n", line);
             exit(-1);
         }
     
         match(Id);
 
-        //ÉèÖÃÁËTypeºÍValue£¬µÈ³ÌĞòºóÃæÒıÓÃµÄÊ±ºò¾ÍÄÜÕıÈ·¼ÓÔØ
+        //è®¾ç½®äº†Typeå’ŒValueï¼Œç­‰ç¨‹åºåé¢å¼•ç”¨çš„æ—¶å€™å°±èƒ½æ­£ç¡®åŠ è½½
         current_id[Type] = final_type;
 
         if(token == Brak){
-            //TODO ĞÂÔöÖ§³ÖÊı×éÉùÃ÷, Êı×éÏÂ±êÒªÊÇÕûÊı      
+            //TODO æ–°å¢æ”¯æŒæ•°ç»„å£°æ˜, æ•°ç»„ä¸‹æ ‡è¦æ˜¯æ•´æ•°      
             static int* addr_keeper;
             next();
             if (token != Num){
@@ -997,13 +997,13 @@ static void global_declaration()
             int num = integral_token_val;
 
             current_id[Class] = Glo;
-            //ÎªÊ²Ã´current_id[Value] = (int)data¾Í²»ĞĞ,¿ÉÄÜÊı×éµÄ·ÃÎÊ¾ÍÊÇÓÃÖ¸Õë
-            //ÊµÏÖµÄ dataÊÇchar*ÀàĞÍµÄ
+            //ä¸ºä»€ä¹ˆcurrent_id[Value] = (int)dataå°±ä¸è¡Œ,å¯èƒ½æ•°ç»„çš„è®¿é—®å°±æ˜¯ç”¨æŒ‡é’ˆ
+            //å®ç°çš„ dataæ˜¯char*ç±»å‹çš„
 
-            //Êı×é±äÁ¿ÊÇÖ¸Õë±äÁ¿£¬Êı×éµÄÆğÊ¼µØÖ·±£´æÔÚ¸ÃÖ¸Õë±äÁ¿ÖĞ
-            //ÕâÀï²»ÄÜÊ¹ÓÃ(int)&dataÒòÎªdataÊÇÈ«¾Ö±äÁ¿£¬ÆäÊıÖµºóÃæÊÇ»á±ä»¯µÄ
-            //Òò´ËĞèÒªÁíÍâÒ»¸ö±äÁ¿À´
-            //´ÓdataÖĞÏÈ·ÖÅäÒ»¸ö¿Õ¼äÓÃÓÚ´æ·ÅÏÂÃæÊı×éµÄÊ×µØÖ·
+            //æ•°ç»„å˜é‡æ˜¯æŒ‡é’ˆå˜é‡ï¼Œæ•°ç»„çš„èµ·å§‹åœ°å€ä¿å­˜åœ¨è¯¥æŒ‡é’ˆå˜é‡ä¸­
+            //è¿™é‡Œä¸èƒ½ä½¿ç”¨(int)&dataå› ä¸ºdataæ˜¯å…¨å±€å˜é‡ï¼Œå…¶æ•°å€¼åé¢æ˜¯ä¼šå˜åŒ–çš„
+            //å› æ­¤éœ€è¦å¦å¤–ä¸€ä¸ªå˜é‡æ¥
+            //ä»dataä¸­å…ˆåˆ†é…ä¸€ä¸ªç©ºé—´ç”¨äºå­˜æ”¾ä¸‹é¢æ•°ç»„çš„é¦–åœ°å€
             addr_keeper = (int*)data;
             data = data + sizeof(int);
             *addr_keeper = (int)data;
@@ -1022,7 +1022,7 @@ static void global_declaration()
             match(']');
 
             
-            //TODO ĞÂÔöÖ§³ÖÊı×éµÄ³õÊ¼»¯
+            //TODO æ–°å¢æ”¯æŒæ•°ç»„çš„åˆå§‹åŒ–
             if (token == Assign){
                 //like int array[4] = {1,3,5,6};
                 int i;
@@ -1054,50 +1054,50 @@ static void global_declaration()
 
         }else {
 
-            //TODO ¸ù¾İ±äÁ¿µÄÀàĞÍ²»Í¬·ÖÅä²»Í¬´óĞ¡¿Õ¼äµÄ
+            //TODO æ ¹æ®å˜é‡çš„ç±»å‹ä¸åŒåˆ†é…ä¸åŒå¤§å°ç©ºé—´çš„
             current_id[Class] = Glo; 
             current_id[Value] = (int)data; 
            
-            //ĞÂÔöµÄ´úÂëÖ§³Ö³õÊ¼»¯
+            //æ–°å¢çš„ä»£ç æ”¯æŒåˆå§‹åŒ–
             if (token == Assign){
-               // Èç¹û¸´ÔÓµÄ»°¾ÍÈ¥µô³õÊ¼»¯
-               // ÀıÈç int a = 10;
+               // å¦‚æœå¤æ‚çš„è¯å°±å»æ‰åˆå§‹åŒ–
+               // ä¾‹å¦‚ int a = 10;
                next();
                if (token != Num){
                   printf("%d: bad initailzer\n", line);
                }
 
-               // ¸ù¾İ±äÁ¿ÀàĞÍ´æ´¢ÏàÓ¦µÄÖµ
+               // æ ¹æ®å˜é‡ç±»å‹å­˜å‚¨ç›¸åº”çš„å€¼
                if (basetype == CHAR || basetype == INT){
                    *(int*)data = (num_type == INT) ? integral_token_val :
                                                           real_token_val;
                }else if (basetype == FLOAT){
-                    // ÒòÎª¿ÉÄÜ»á³öÏÖfloat f = 1ÕâÑùµÄÇé¿ö£¬ËùÒÔĞèÒªÅĞ¶Ï
-                    // ÓÒ±ßµÄÊıÖµÊÇÉùÃ÷ÀàĞÍµÄ
+                    // å› ä¸ºå¯èƒ½ä¼šå‡ºç°float f = 1è¿™æ ·çš„æƒ…å†µï¼Œæ‰€ä»¥éœ€è¦åˆ¤æ–­
+                    // å³è¾¹çš„æ•°å€¼æ˜¯å£°æ˜ç±»å‹çš„
                    *(float*)data = (num_type == FLOAT) ? real_token_val : 
                                                       integral_token_val;
                }
                else if (basetype == DOUBLE){
-                   // Í¬ÉÏdouble d = 1
+                   // åŒä¸Šdouble d = 1
                    *(double*)data = (num_type == FLOAT) ? real_token_val :
                                                        integral_token_val;
                }else{
-                   // TODO Ö¸ÕëµÄ¸³Öµ
+                   // TODO æŒ‡é’ˆçš„èµ‹å€¼
                }
 
 
-               //×¢ÒâÖ»ÓĞ³õÊ¼»¯µÄÊ±ºò²ÅĞèÒªÆ¥ÅäNum
+               //æ³¨æ„åªæœ‰åˆå§‹åŒ–çš„æ—¶å€™æ‰éœ€è¦åŒ¹é…Num
                match(Num);
             }
 
-            //¸üĞÂdataµØÖ·£¬°´ÕÕ±äÁ¿µÄÀàĞÍ
+            //æ›´æ–°dataåœ°å€ï¼ŒæŒ‰ç…§å˜é‡çš„ç±»å‹
             if ((basetype == INT)  || 
                 (basetype == CHAR) ||
                 (final_type > PTR)){
                 data = data + sizeof(int);
             }else if(basetype == FLOAT){
-                // ÄÚ²¿µÄfloatÀàĞÍÒÔ¼°doubleÀàĞÍÔËËã¶¼ÊÇÔÚÀàĞÍÎªdoubleµÄ
-                // ¼Ä´æÆ÷µÄ£¬µ«ÊÇ´æ·ÅÔÚdataÉÏ»¹ÊÇÒªÇø·ÖÕâÁ½ÖÖÊı¾İÀàĞÍ
+                // å†…éƒ¨çš„floatç±»å‹ä»¥åŠdoubleç±»å‹è¿ç®—éƒ½æ˜¯åœ¨ç±»å‹ä¸ºdoubleçš„
+                // å¯„å­˜å™¨çš„ï¼Œä½†æ˜¯å­˜æ”¾åœ¨dataä¸Šè¿˜æ˜¯è¦åŒºåˆ†è¿™ä¸¤ç§æ•°æ®ç±»å‹
                 data = data + sizeof(float);
             }else{
                 data = data + sizeof(double);
@@ -1149,7 +1149,7 @@ static void parse_block_code()
 }
 
 
-//Ö»³õÊ¼»¯Ò»´Î
+//åªåˆå§‹åŒ–ä¸€æ¬¡
 int parser_init()
 {
     int i, fd;
@@ -1158,7 +1158,7 @@ int parser_init()
     poolsize = 256 * 1024;
     line = 1;
 
-    //±àÒëÖ®ºóÓ¦¸ÃÖ»±£´ætext data
+    //ç¼–è¯‘ä¹‹ååº”è¯¥åªä¿å­˜text data
     // allocate memory
     if (!(text = malloc(poolsize))) {
         printf("could not malloc(%d) for text area\n", poolsize);
@@ -1172,7 +1172,7 @@ int parser_init()
     }
     data_start = data;
 
-    //Ö»ÊÇ±àÒëµÄÊ±ºò»áÊ¹ÓÃ 
+    //åªæ˜¯ç¼–è¯‘çš„æ—¶å€™ä¼šä½¿ç”¨ 
     if (!(symbols = malloc(poolsize))) {
         printf("could not malloc(%d) for symbol table\n", poolsize);
         return -1;
@@ -1184,16 +1184,16 @@ int parser_init()
 }
 
 
-//Ã¿´Î±àÒëĞÂµÄ´úÂëÆ¬¶ÎµÄÊ±ºò¶¼ĞèÒªÖØĞÂÉèÖÃÒ»ÏÂ·ûºÅ±í
-//TODO ÕâĞ©ÊÇ¹«¹²µÄ²¿·ÖÓ¦¸ÃÖ»³õÊ¼»¯Ò»´Î
-//²»Í¬´úÂë¿éµÄÒÔ¼°×¢ÈëµÄ·ûºÅµ¥¶À³ÉÒ»ÕÅ·ûºÅ±í
-//Á½ÕÅ·ûºÅ±í: ¹«¹²·ûºÅ±íÒÔ¼°Ë½ÓĞ·ûºÅ±í
+//æ¯æ¬¡ç¼–è¯‘æ–°çš„ä»£ç ç‰‡æ®µçš„æ—¶å€™éƒ½éœ€è¦é‡æ–°è®¾ç½®ä¸€ä¸‹ç¬¦å·è¡¨
+//TODO è¿™äº›æ˜¯å…¬å…±çš„éƒ¨åˆ†åº”è¯¥åªåˆå§‹åŒ–ä¸€æ¬¡
+//ä¸åŒä»£ç å—çš„ä»¥åŠæ³¨å…¥çš„ç¬¦å·å•ç‹¬æˆä¸€å¼ ç¬¦å·è¡¨
+//ä¸¤å¼ ç¬¦å·è¡¨: å…¬å…±ç¬¦å·è¡¨ä»¥åŠç§æœ‰ç¬¦å·è¡¨
 static  void init_symbol_table()
 {
     memset(symbols, 0, poolsize);
 
-    // ×¢ÒâÕâ¸öË³ĞòÒªºÍsymbol.hÖĞµÄ¶ÔÓ¦ÆğÀ´£¬·ñÔò»á±¨´íÎó
-    // È»ºóºÍsymbol.hµÄ·ÅÔÚÒ»Æğ£¬ÈÃÏà¹ØµÄ¶«Î÷ÔÚÒ»Æğ·½±ãÒÔºóĞŞ¸Ä
+    // æ³¨æ„è¿™ä¸ªé¡ºåºè¦å’Œsymbol.hä¸­çš„å¯¹åº”èµ·æ¥ï¼Œå¦åˆ™ä¼šæŠ¥é”™è¯¯
+    // ç„¶åå’Œsymbol.hçš„æ”¾åœ¨ä¸€èµ·ï¼Œè®©ç›¸å…³çš„ä¸œè¥¿åœ¨ä¸€èµ·æ–¹ä¾¿ä»¥åä¿®æ”¹
     char* keyword = "char int float double if else while return";
     prepare_for_tokenization(keyword, symbols); 
 
@@ -1203,8 +1203,8 @@ static  void init_symbol_table()
         current_id[Token] = i++;
     }
 
-    // ½âÎösrcÖĞµÄ·ûºÅ²¢½«Æä¼ÓÈëµ½µ±Ç°±êÊ¶ÖĞ£¬¼´²»ĞèÒª
-    // Õâ¸ö²½Öè¿ÉÒÔ×÷Îªµ¥¶ÀµÄº¯ÊıÌáÁ¶³öÀ´£¬·½±ãºóÃæ¼ÓÈëĞÂµÄ·ûºÅ
+    // è§£æsrcä¸­çš„ç¬¦å·å¹¶å°†å…¶åŠ å…¥åˆ°å½“å‰æ ‡è¯†ä¸­ï¼Œå³ä¸éœ€è¦
+    // è¿™ä¸ªæ­¥éª¤å¯ä»¥ä½œä¸ºå•ç‹¬çš„å‡½æ•°æç‚¼å‡ºæ¥ï¼Œæ–¹ä¾¿åé¢åŠ å…¥æ–°çš„ç¬¦å·
     char* libfunc = "open read close printf malloc memset memcmp exit void";
     prepare_for_tokenization(libfunc, symbols);
 
@@ -1216,7 +1216,7 @@ static  void init_symbol_table()
         current_id[Value] = i++;
     } 
 
-    // ´¦ÀívoidÀàĞÍ
+    // å¤„ç†voidç±»å‹
     next(); current_id[Token] = Char; 
 }
 
@@ -1228,25 +1228,25 @@ int* compile_src_code
 )
 {
  
-   // ³õÊ¼»¯·ûºÅ±í 
+   // åˆå§‹åŒ–ç¬¦å·è¡¨ 
    init_symbol_table();
 
-   // ×¢ÈëÒÀÀµ
+   // æ³¨å…¥ä¾èµ–
    inject_dependency(dep_itemsp);
    
-   // ½âÎöÔ´´úÂë
+   // è§£ææºä»£ç 
    prepare_for_tokenization(src_code, symbols);
 
-   // ½âÎö´úÂë¿é
+   // è§£æä»£ç å—
    parse_block_code();
 
-   // ÊÖ¶¯Ìí¼ÓÍË³ö´úÂë
+   // æ‰‹åŠ¨æ·»åŠ é€€å‡ºä»£ç 
    *++text = EXIT;
 
-   // ÖØ¶¨Î»ÎÄ±¾¶Î
+   // é‡å®šä½æ–‡æœ¬æ®µ
    int* relocated_code = relocation(text_start, text, data_start, data);
 
-   // Îª±àÒëÏÂÒ»¸ö´úÂë¿é³õÊ¼»¯±àÒë»·¾³:text¶ÎºÍdata¶Î
+   // ä¸ºç¼–è¯‘ä¸‹ä¸€ä¸ªä»£ç å—åˆå§‹åŒ–ç¼–è¯‘ç¯å¢ƒ:textæ®µå’Œdataæ®µ
    reset_complie_environment();
 
    return relocated_code;
@@ -1284,9 +1284,9 @@ static void reset_complie_environment()
 
 static int emit_store_directive(int type)
 {
-   // Èç¹û±äÁ¿ÀàĞÍÊÇÖ¸ÕëÀàĞÍµÄ£¬ÏÈ½«±£´æÆäµØÖ·
-   // ×îºóµÈexpr_type¼õÎªÆä»ù±¾ÀàĞÍÊ±ÔÙÓÃÕıÈ·µÄ
-   // ´æ´¢Ö¸Áî±£´æÏàÓ¦ÀàĞÍµÄÖµ
+   // å¦‚æœå˜é‡ç±»å‹æ˜¯æŒ‡é’ˆç±»å‹çš„ï¼Œå…ˆå°†ä¿å­˜å…¶åœ°å€
+   // æœ€åç­‰expr_typeå‡ä¸ºå…¶åŸºæœ¬ç±»å‹æ—¶å†ç”¨æ­£ç¡®çš„
+   // å­˜å‚¨æŒ‡ä»¤ä¿å­˜ç›¸åº”ç±»å‹çš„å€¼
    if (type >= PTR) return SI;
 
    return  (type == CHAR) ? SC : 
@@ -1297,13 +1297,13 @@ static int emit_store_directive(int type)
 
 static int emit_load_directive(int type)
 {
-   // Èç¹û±äÁ¿ÀàĞÍÊÇÖ¸ÕëÀàĞÍµÄÒªÏÈ½«¼ÓÔØÆäµØÖ·£¬×îºóµÈexpr_type
-   // ¼õÎªÆä»ù±¾ÀàĞÍÊ±ÔÙÓÃÏàÓ¦µÄ¼ÓÔØÖ¸Áî¼ÓÔØÏàÓ¦ÀàĞÍµÄÖµ£¬ÀıÈç
-   // fµÄÀàĞÍÊÇfloat**£¬ÄÇÃ´Îª±í´ïÊ½**f²úÉúµÄÖ¸ÁîĞòÁĞÈçÏÂËùÊ¾:
+   // å¦‚æœå˜é‡ç±»å‹æ˜¯æŒ‡é’ˆç±»å‹çš„è¦å…ˆå°†åŠ è½½å…¶åœ°å€ï¼Œæœ€åç­‰expr_type
+   // å‡ä¸ºå…¶åŸºæœ¬ç±»å‹æ—¶å†ç”¨ç›¸åº”çš„åŠ è½½æŒ‡ä»¤åŠ è½½ç›¸åº”ç±»å‹çš„å€¼ï¼Œä¾‹å¦‚
+   // fçš„ç±»å‹æ˜¯float**ï¼Œé‚£ä¹ˆä¸ºè¡¨è¾¾å¼**fäº§ç”Ÿçš„æŒ‡ä»¤åºåˆ—å¦‚ä¸‹æ‰€ç¤º:
    // IMM f_addr LI LI LF 
    if (type >= PTR) return LI;
 
-   // ´¦Àí»ù±¾ÀàĞÍchar int float double
+   // å¤„ç†åŸºæœ¬ç±»å‹char int float double
    return  (type == CHAR) ? LC : 
            (type == INT) ? LI :
            (type == FLOAT) ? LF : LD;
@@ -1322,15 +1322,15 @@ static int type_of_token(int token)
 
 static void load_real_number_constant(double float_const)
 {
-    //¼ÓÔØ¸¡µã³£Á¿
+    //åŠ è½½æµ®ç‚¹å¸¸é‡
     double* addr;
 
     *++text = FIMM;
     addr = (double*)(text + 1);
     *addr = float_const;
 
-    // ÄÚ²¿¸¡µãÊı³£Á¿Ê¹ÓÃdoubleÀàĞÍ´æ´¢Õ¼8¸ö×Ö½Ú£¬ÒòÎªtextÊÇ
-    // int*ÀàĞÍµÄtext+2Ïàµ±ÓÚÊÇÆ«ÒÆÁË8¸ö×Ö½ÚµÄ´óĞ¡
+    // å†…éƒ¨æµ®ç‚¹æ•°å¸¸é‡ä½¿ç”¨doubleç±»å‹å­˜å‚¨å 8ä¸ªå­—èŠ‚ï¼Œå› ä¸ºtextæ˜¯
+    // int*ç±»å‹çš„text+2ç›¸å½“äºæ˜¯åç§»äº†8ä¸ªå­—èŠ‚çš„å¤§å°
     text += 2;
 }
 
@@ -1345,18 +1345,18 @@ static void load_integral_number_constant(int int_const)
 static int get_base_type(int type)
 {
     // CHAR INT FLOAT DOUBLE PTR
-    // ÒòÎªPTRµÄÖµ×î´ó£¬ÆäËü·Ç»ù±¾ÀàĞÍ¶¼ÊÇ4¸ö»ù±¾ÀàĞÍ¼ÓÉÏÈô¸É¸ö
-    // PTRµÃµ½µÄ£¬Òò´Ë¿ÉÒÔÍ¨¹ıÈ¡ÃşÀ´È¥³ıÖ¸ÕëÀàĞÍµÃµ½»ù±¾ÀàĞÍ
+    // å› ä¸ºPTRçš„å€¼æœ€å¤§ï¼Œå…¶å®ƒéåŸºæœ¬ç±»å‹éƒ½æ˜¯4ä¸ªåŸºæœ¬ç±»å‹åŠ ä¸Šè‹¥å¹²ä¸ª
+    // PTRå¾—åˆ°çš„ï¼Œå› æ­¤å¯ä»¥é€šè¿‡å–æ‘¸æ¥å»é™¤æŒ‡é’ˆç±»å‹å¾—åˆ°åŸºæœ¬ç±»å‹
     return (type % PTR); 
 }
 
 
 static Boolean does_operate_on_constant()
 {
-  // TODO Õâ¸öÌõ¼şÖ»ÊÇ±ØÒªÌõ¼ş£¬¼´Èç¹ûÒ»¸ö²Ù×÷·ûºÅ
-  // ÕıÔÚ²Ù×÷Ò»¸ö³£Á¿µÄ»°£¬ÄÇÃ´ÔÚ¸Ãº¯Êı±»µ÷ÓÃµÄÊ±ºò
-  // ÃüÁîĞòÁĞÓ¦¸ÃÂú×ãÏÂÃæµÄÌõ¼ş£¬µ«ÊÇ»¹Ã»ÓĞÕÒµ½³ä·Ö
-  // Ìõ¼ş
+  // TODO è¿™ä¸ªæ¡ä»¶åªæ˜¯å¿…è¦æ¡ä»¶ï¼Œå³å¦‚æœä¸€ä¸ªæ“ä½œç¬¦å·
+  // æ­£åœ¨æ“ä½œä¸€ä¸ªå¸¸é‡çš„è¯ï¼Œé‚£ä¹ˆåœ¨è¯¥å‡½æ•°è¢«è°ƒç”¨çš„æ—¶å€™
+  // å‘½ä»¤åºåˆ—åº”è¯¥æ»¡è¶³ä¸‹é¢çš„æ¡ä»¶ï¼Œä½†æ˜¯è¿˜æ²¡æœ‰æ‰¾åˆ°å……åˆ†
+  // æ¡ä»¶
   return (*(text-1) == IMM || *(text-2) == FIMM);
 }
 
@@ -1369,10 +1369,10 @@ static void emit_code_for_binary_left
 {
     printf("+ left type %d\n", expr_type);
     if (expr_type == FLOAT || expr_type == DOUBLE){
-      // ½«¼ÓÔØµ½bxµÄÊıÑ¹ÈËµ½fspÕ»ÖĞ
+      // å°†åŠ è½½åˆ°bxçš„æ•°å‹äººåˆ°fspæ ˆä¸­
         *++text = PUSF;
      }else{
-      // Èç¹ûºóÃæµÄ±í´ïÊ½µÄÀàĞÍÊÇ¸¡µãµÄ»°£¬ĞèÒªĞŞ¸ÄÖ¸Áî
+      // å¦‚æœåé¢çš„è¡¨è¾¾å¼çš„ç±»å‹æ˜¯æµ®ç‚¹çš„è¯ï¼Œéœ€è¦ä¿®æ”¹æŒ‡ä»¤
         *++text = NOP;
         *reserve1 = text;
         *++text = PUSH; 
@@ -1391,8 +1391,8 @@ static void emit_code_for_binary_right
 {
      printf("+ right type %d\n", expr_type);
      if (expr_type == FLOAT || expr_type == DOUBLE){
-         // ×ó±ßµÄ±í´ïÊ½Èç¹ûÊÇÕûĞÍµÄ»°ĞèÒªÊ¹ÓÃATOB½«axµÄÖµ×ª»»
-         // ³ÉdoubleÀàĞÍ´æ·ÅbxÖĞ, Ö¸ÁîĞŞ¸ÄÈçÏÂ
+         // å·¦è¾¹çš„è¡¨è¾¾å¼å¦‚æœæ˜¯æ•´å‹çš„è¯éœ€è¦ä½¿ç”¨ATOBå°†axçš„å€¼è½¬æ¢
+         // æˆdoubleç±»å‹å­˜æ”¾bxä¸­, æŒ‡ä»¤ä¿®æ”¹å¦‚ä¸‹
          if (*reserve1 != NULL){
               *(*reserve1) = ATOB;
               *(*reserve2) = PUSF;
@@ -1401,15 +1401,15 @@ static void emit_code_for_binary_right
            expr_type = DOUBLE;
            *++text = operator_for_real_number;  
       }else{
-          // Ç°ÃæµÄÊÇ¸¡µã£¬ºóÃæÊÇÕûĞÍ
+          // å‰é¢çš„æ˜¯æµ®ç‚¹ï¼Œåé¢æ˜¯æ•´å‹
           if (*reserve1 == NULL){
-               // Ö±½Ó½«axµÄÊıÖµ×ªĞÍ²¢´æ·ÅÔÚbxÖĞ£¬Ç°ÃæµÄ²Ù×÷ÊıÒÑ¾­Ñ¹ÈË
-               // fspÕ»ÖĞÁË
+               // ç›´æ¥å°†axçš„æ•°å€¼è½¬å‹å¹¶å­˜æ”¾åœ¨bxä¸­ï¼Œå‰é¢çš„æ“ä½œæ•°å·²ç»å‹äºº
+               // fspæ ˆä¸­äº†
                *++text = ATOB; 
                *++text = operator_for_real_number;  
                expr_type = DOUBLE;
            }else{
-            // Á½¸ö²Ù×÷ÊıÀàĞÍ¶¼ÊÇÕûĞÍµÄ
+            // ä¸¤ä¸ªæ“ä½œæ•°ç±»å‹éƒ½æ˜¯æ•´å‹çš„
                *++text = operator_for_integral_number;  
                expr_type = INT;
           }
@@ -1417,16 +1417,20 @@ static void emit_code_for_binary_right
 }
 
 
-// ¼ì²â¸³Öµ"left_type = right_type"ºÍ×ªĞÍ"(left_type)right_type"
-// ×ªĞÍÒ²¿ÉÒÔ¿´³ÉÊÇÒ»ÖÖ¸³ÖµÀıÈçint(10.5) + 10.0 ½á¹ûÊÇ20¶ø²»ÊÇ
-// 20.5£¬ËùÒÔÕâÀïÓÃÍ¬Ò»¸öº¯Êı½øĞĞ¼ì²â
+// æ£€æµ‹èµ‹å€¼"left_type = right_type"å’Œè½¬å‹"(left_type)right_type"
+// è½¬å‹ä¹Ÿå¯ä»¥çœ‹æˆæ˜¯ä¸€ç§èµ‹å€¼ä¾‹å¦‚int(10.5) + 10.0 ç»“æœæ˜¯20è€Œä¸æ˜¯
+// 20.5ï¼Œæ‰€ä»¥è¿™é‡Œç”¨åŒä¸€ä¸ªå‡½æ•°è¿›è¡Œæ£€æµ‹
 static void check_assignment_types(int left_type, int right_type)
 {
     if (left_type == right_type) return;
  
-    // ÎªÁË°²È«Æğ¼û²»Í¬ÀàĞÍµÄÖ¸ÕëÒÔ¼°»ù±¾ÀàĞÍºÍÖ¸ÕëÀàĞÍ²»ÄÜÏà»¥¸³Öµ
-    // ºÍ×ªĞÍ£¬Òò´ËÕâÀïµÄ×ªĞÍÊÇ"ÊÜÏŞµÄ×ªĞÍ"
+    // ä¸ºäº†å®‰å…¨èµ·è§ä¸åŒç±»å‹çš„æŒ‡é’ˆä»¥åŠåŸºæœ¬ç±»å‹å’ŒæŒ‡é’ˆç±»å‹ä¸èƒ½ç›¸äº’èµ‹å€¼
+    // å’Œè½¬å‹ï¼Œå› æ­¤è¿™é‡Œçš„è½¬å‹æ˜¯"å—é™çš„è½¬å‹"
     if (left_type >= PTR || right_type >= PTR){
+        
+        //
+        if ( left_type < 2*PTR && right_type < 2*PTR) return;
+
         char left_str_repr[64], right_str_repr[64];
         numtype_to_strtype(left_type, left_str_repr);
         numtype_to_strtype(right_type, right_str_repr);
@@ -1435,7 +1439,7 @@ static void check_assignment_types(int left_type, int right_type)
         exit(-1);
     }
 
-    // ¸³Öµ×ó±ßÊÇ¸¡µãĞÍ£¬ÓÒ±ßÊÇÕûĞÍ
+    // èµ‹å€¼å·¦è¾¹æ˜¯æµ®ç‚¹å‹ï¼Œå³è¾¹æ˜¯æ•´å‹
     if ((left_type == FLOAT || left_type == DOUBLE) &&
         (right_type == INT || right_type == CHAR)){
 
@@ -1443,11 +1447,11 @@ static void check_assignment_types(int left_type, int right_type)
         
      }else if ((left_type == INT || left_type == CHAR) &&
               (right_type == FLOAT || right_type == DOUBLE)){
-    // ¸³Öµ×ó±ßÊÇÕûĞÍ£¬ÓÒ±ßÊÇ¸¡µãĞÍ
+    // èµ‹å€¼å·¦è¾¹æ˜¯æ•´å‹ï¼Œå³è¾¹æ˜¯æµ®ç‚¹å‹
 
             *++text = BTOA; 
      }else{
-    // ÆäËüÇé¿öµÄ¶¼ÊÇÔÊĞíµÄ¶øÇÒ²»ĞèÒª½øĞĞ¶îÍâµÄ¹¤×÷ 
+    // å…¶å®ƒæƒ…å†µçš„éƒ½æ˜¯å…è®¸çš„è€Œä¸”ä¸éœ€è¦è¿›è¡Œé¢å¤–çš„å·¥ä½œ 
      }
 }
 

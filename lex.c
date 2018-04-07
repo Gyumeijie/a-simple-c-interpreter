@@ -6,14 +6,14 @@
 static const char* src;
 static int  *symbols;
 
-// ±êÊ¶·ûµÄÃèÊöÐÅÏ¢ 
+// æ ‡è¯†ç¬¦çš„æè¿°ä¿¡æ¯ 
 enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
 int *current_id;
 int token;
-// ±£´æint charµÈÕûÐÍÊý
+// ä¿å­˜int charç­‰æ•´åž‹æ•°
 int integral_token_val;
-// ±£´æfloat doubleµÄ¸¡µãÀàÐÍÊý
+// ä¿å­˜float doubleçš„æµ®ç‚¹ç±»åž‹æ•°
 double real_token_val;
 int line;
 int num_type;
@@ -37,13 +37,13 @@ void next() {
         }
 
         else if (token == '#') {
-            //Ìø¹ýºê¶¨Òå£¬ÒòÎª²»Ö§³Ö
+            //è·³è¿‡å®å®šä¹‰ï¼Œå› ä¸ºä¸æ”¯æŒ
             while (*src != 0 && *src != '\n') {
                 src++;
             }
         }
         
-        //½âÎö±êÊ¶·û
+        //è§£æžæ ‡è¯†ç¬¦
         else if (is_valid_identifier_leading_character(token)) {
 
             last_pos = (char*)src - 1;
@@ -54,9 +54,9 @@ void next() {
                 src++;
             }
            
-            // ËÑË÷·ûºÅ±í
-            // ÕâÀïÄ¬ÈÏÉèÖÃµÄIdSize¼´±êÊ¶·ûµÄ³¤¶ÈÊÇ10£¬Èç¹ûÁ½¸ö·ûºÅµÄÇ°Ãæ10¸öÊÇ
-            // ÏàÍ¬µÄ£¬ÄÇÃ´¾ÍÇø·Ö²»³öÀ´ÁË,¿ÉÒÔ¸ù¾ÝÊµ¼ÊÇé¿öÏÂÖØÐÂÉèÖÃÆä´óÐ¡
+            // æœç´¢ç¬¦å·è¡¨
+            // è¿™é‡Œé»˜è®¤è®¾ç½®çš„IdSizeå³æ ‡è¯†ç¬¦çš„é•¿åº¦æ˜¯10ï¼Œå¦‚æžœä¸¤ä¸ªç¬¦å·çš„å‰é¢10ä¸ªæ˜¯
+            // ç›¸åŒçš„ï¼Œé‚£ä¹ˆå°±åŒºåˆ†ä¸å‡ºæ¥äº†,å¯ä»¥æ ¹æ®å®žé™…æƒ…å†µä¸‹é‡æ–°è®¾ç½®å…¶å¤§å°
             current_id = symbols;
             int id_len = src - last_pos;
             while (current_id[Token]) {
@@ -66,11 +66,11 @@ void next() {
 
                     return;
                 }
-                //²éÕÒÏÂÒ»¸öÌõÄ¿
+                //æŸ¥æ‰¾ä¸‹ä¸€ä¸ªæ¡ç›®
                 current_id = current_id + IdSize;
             }
 
-            //Èç¹ûÃ»ÓÐÕÒµ½¾ÍÔÚÐÂµÄsymbols±íÏîÖÐ´´½¨Ò»¸öIDÌõÄ¿
+            //å¦‚æžœæ²¡æœ‰æ‰¾åˆ°å°±åœ¨æ–°çš„symbolsè¡¨é¡¹ä¸­åˆ›å»ºä¸€ä¸ªIDæ¡ç›®
             current_id[Name] = (int)last_pos;
             current_id[Hash] = hash;
             token = current_id[Token] = Id;
@@ -78,27 +78,27 @@ void next() {
             return;
         }
         
-        // Èç¹ûÊÇ×ÖÃæÁ¿µÄ»°¾Í¼ÆËãÆäÊýÖµ
+        // å¦‚æžœæ˜¯å­—é¢é‡çš„è¯å°±è®¡ç®—å…¶æ•°å€¼
         else if (token >= '0' && token <= '9') {
 
-            // ±£´æ¸¡µãÊý×ÖÃæÁ¿£¬Ö®ºóÓÃ×ª»»º¯Êý½øÐÐ×ª»»
+            // ä¿å­˜æµ®ç‚¹æ•°å­—é¢é‡ï¼Œä¹‹åŽç”¨è½¬æ¢å‡½æ•°è¿›è¡Œè½¬æ¢
             char float_string[64];
             const char* string_begin = src;
 
-            // ÕâÀï×¢ÒâÒ»Ð©Ê®½øÖÆµ¥¶À0µÄÇé¿ö
+            // è¿™é‡Œæ³¨æ„ä¸€äº›åè¿›åˆ¶å•ç‹¬0çš„æƒ…å†µ
             integral_token_val = token - '0';
             num_type = INT;
             if (integral_token_val > 0) {
                 float_string[0] = token;
                 int idx = 1;
 
-                // Ê®½øÖÆ
+                // åè¿›åˆ¶
                 while (*src >= '0' && *src <= '9') {
                     integral_token_val = integral_token_val*10 + *src++ - '0';
                 }
 
-                // ¼ì²âÊÇ·ñ¿ÉÄÜÊÇ¸¡µã£¬¼´¼ì²âÏÂÒ»¸ö×Ö·ûÊÇ·ñÊÇ'.'
-                // ¶ÔÓÚ¸¡µãÊýÔÝÊ±²»Ö§³ÖÈç0001.xxxµÄ¸¡µãÊýÐÎÊ½
+                // æ£€æµ‹æ˜¯å¦å¯èƒ½æ˜¯æµ®ç‚¹ï¼Œå³æ£€æµ‹ä¸‹ä¸€ä¸ªå­—ç¬¦æ˜¯å¦æ˜¯'.'
+                // å¯¹äºŽæµ®ç‚¹æ•°æš‚æ—¶ä¸æ”¯æŒå¦‚0001.xxxçš„æµ®ç‚¹æ•°å½¢å¼
                 if (*src == '.'){
                     memcpy(&float_string[1], string_begin, src - string_begin);
                     idx = idx + src - string_begin;
@@ -111,9 +111,9 @@ void next() {
                 }
 
             } else {
-                // '0'¿ªÍ·µÄÊý£¬°Ë½øÖÆ»òÕßÊ®Áù½øÖÆ»òÕßÊÇÐ¡Êý
+                // '0'å¼€å¤´çš„æ•°ï¼Œå…«è¿›åˆ¶æˆ–è€…åå…­è¿›åˆ¶æˆ–è€…æ˜¯å°æ•°
                 if (*src == 'x' || *src == 'X') {
-                    // Ê®Áù½øÖÆ
+                    // åå…­è¿›åˆ¶
                     token = *++src;
                     int sum = 0;
                     while ((token >= '0' && token <= '9') || 
@@ -125,7 +125,7 @@ void next() {
                     integral_token_val = sum;
 
                 }else if(*src == '.'){
-                    // Ð¡Êý0.xxxxxxÐÎÊ½ 
+                    // å°æ•°0.xxxxxxå½¢å¼ 
                     float_string[0] = '0';
                     float_string[1] = '.';
 
@@ -134,7 +134,7 @@ void next() {
                     real_token_val = strtod(float_string, NULL);
                     num_type = FLOAT;
                 }else{
-                    // °Ë½øÖÆÓÃµÄ±È½ÏÉÙÔÝÊ±²»Ö§³Ö
+                    // å…«è¿›åˆ¶ç”¨çš„æ¯”è¾ƒå°‘æš‚æ—¶ä¸æ”¯æŒ
                 }
             }
 
@@ -143,7 +143,7 @@ void next() {
         }
 
         else if (token == '.'){
-           //´¦Àí.xxxxxÐÎÊ½µÄ¸¡µãÊý
+           //å¤„ç†.xxxxxå½¢å¼çš„æµ®ç‚¹æ•°
            char float_string[32];
            float_string[0] = '.';
            process_fraction(float_string, 1);
@@ -156,7 +156,7 @@ void next() {
 
         else if (token == '/') {
             if (*src == '/') {
-                //Ìø¹ý×¢ÊÍ 
+                //è·³è¿‡æ³¨é‡Š 
                 while (*src != 0 && *src != '\n') {
                     ++src;
                 }
@@ -167,14 +167,14 @@ void next() {
         }
 
         else if (token == '"') {
-            // ½âÎö×Ö·û´®³£Á¿£¬Ä¿Ç°Ö»Ö§³Ö×ªÒå×Ö·û'\n', ×Ö·û´®³£Á¿µÄÖµ´æ·ÅÔÚdata
-            // ¶Î
+            // è§£æžå­—ç¬¦ä¸²å¸¸é‡ï¼Œç›®å‰åªæ”¯æŒè½¬ä¹‰å­—ç¬¦'\n', å­—ç¬¦ä¸²å¸¸é‡çš„å€¼å­˜æ”¾åœ¨data
+            // æ®µ
             last_pos = data;
 
-            //´æÈ¡×Ö·û×ÖÃæÁ¿
+            //å­˜å–å­—ç¬¦å­—é¢é‡
             while (*src != 0 && *src != token) {
                 integral_token_val = *src++;
-                // ´¦Àí×Ö·û´®ÖÐµÄ×ªÒå×Ö·û
+                // å¤„ç†å­—ç¬¦ä¸²ä¸­çš„è½¬ä¹‰å­—ç¬¦
                 if (integral_token_val == '\\') {
                     integral_token_val = *src++;
                     if (integral_token_val == 'n') {
@@ -182,7 +182,7 @@ void next() {
                     }
                 }
 
-                //´æ·Å×Ö·û´®³£Á¿ÖÐµÄ×Ö·û
+                //å­˜æ”¾å­—ç¬¦ä¸²å¸¸é‡ä¸­çš„å­—ç¬¦
                 *data++ = integral_token_val;
             }
 
@@ -195,7 +195,7 @@ void next() {
         else if (token == '\''){
             integral_token_val = *src++;
         
-            //´¦Àíµ¥ÒýºÅÖÐµÄ×ªÒå×Ö·û
+            //å¤„ç†å•å¼•å·ä¸­çš„è½¬ä¹‰å­—ç¬¦
             if (integral_token_val == '\\'){
                 integral_token_val = *src++;
                 if (integral_token_val == 'n') {
@@ -203,22 +203,22 @@ void next() {
                 }
             }
 
-            //µ¥ÒýºÅÖÐÖ»ÄÜÓÐÒ»¸ö×ªÒå×Ö·û£¨Á½¸ö×Ö·û£©ºÍÒ»¸ö·Ç×ªÒå×Ö·û,Èç¹û»¹ÓÐÆä
-            //ËüµÄ×Ö·ûÔò±¨´í
+            //å•å¼•å·ä¸­åªèƒ½æœ‰ä¸€ä¸ªè½¬ä¹‰å­—ç¬¦ï¼ˆä¸¤ä¸ªå­—ç¬¦ï¼‰å’Œä¸€ä¸ªéžè½¬ä¹‰å­—ç¬¦,å¦‚æžœè¿˜æœ‰å…¶
+            //å®ƒçš„å­—ç¬¦åˆ™æŠ¥é”™
             if (*src != '\''){
                printf("%d: bad char value\n", line);
                exit(-1);
             }
 
             src++;
-            // Èç'c', ¾Í·µ»ØNum£¬token_valÒÔ¸³ÖµÎªÏàÓ¦µÄasciiÖµ
+            // å¦‚'c', å°±è¿”å›žNumï¼Œtoken_valä»¥èµ‹å€¼ä¸ºç›¸åº”çš„asciiå€¼
             token = Num; 
 
             return;
         }
 
         else if (token == '=') {
-            // ½âÎö '==' ºÍ '='
+            // è§£æž '==' å’Œ '='
             if (*src == '=') {
                 src ++;
                 token = Eq;
@@ -228,7 +228,7 @@ void next() {
             return;
         }
         else if (token == '+') {
-            // ½âÎö '+' ºÍ '++'
+            // è§£æž '+' å’Œ '++'
             if (*src == '+') {
                 src ++;
                 token = Inc;
@@ -238,7 +238,7 @@ void next() {
             return;
         }
         else if (token == '-') {
-            // ½âÎö '-' ºÍ '--'
+            // è§£æž '-' å’Œ '--'
             if (*src == '-') {
                 src ++;
                 token = Dec;
@@ -248,7 +248,7 @@ void next() {
             return;
         }
         else if (token == '!') {
-            // ½âÎö'!='
+            // è§£æž'!='
             if (*src == '=') {
                 src++;
                 token = Ne;
@@ -256,7 +256,7 @@ void next() {
             return;
         }
         else if (token == '<') {
-            // ½âÎö '<=', '<<' or '<'
+            // è§£æž '<=', '<<' or '<'
             if (*src == '=') {
                 src ++;
                 token = Le;
@@ -269,7 +269,7 @@ void next() {
             return;
         }
         else if (token == '>') {
-            //½âÎö'>='£¬'>>' »òÕß '>'
+            //è§£æž'>='ï¼Œ'>>' æˆ–è€… '>'
             if (*src == '=') {
                 src ++;
                 token = Ge;
@@ -282,7 +282,7 @@ void next() {
             return;
         }
         else if (token == '|') {
-            //½âÎö'|'ºÍ'||'
+            //è§£æž'|'å’Œ'||'
             if (*src == '|') {
                 src ++;
                 token = Lor;
@@ -292,7 +292,7 @@ void next() {
             return;
         }
         else if (token == '&') {
-            //½âÎö'&'ºÍ'&&'
+            //è§£æž'&'å’Œ'&&'
             if (*src == '&') {
                 src ++;
                 token = Lan;
@@ -330,11 +330,11 @@ void next() {
                  token == ']' || 
                  token == ',' ||
                  token == ':') {
-            //Ö±½Ó½«ÕâÐ©×Ö·û×÷Îªtoken·µ»Ø 
+            //ç›´æŽ¥å°†è¿™äº›å­—ç¬¦ä½œä¸ºtokenè¿”å›ž 
             return;
         }
         else{
-           //ÆäËüÇé¿öºöÂÔ
+           //å…¶å®ƒæƒ…å†µå¿½ç•¥
         }
     }
 }
@@ -380,7 +380,7 @@ static Boolean is_digit(char ch)
 }
 
 
-//´¦Àí¸¡µãÊýµÄÐ¡Êý²¿·Ö
+//å¤„ç†æµ®ç‚¹æ•°çš„å°æ•°éƒ¨åˆ†
 static void process_fraction(char* float_string, int start_idx)
 {
    int idx = start_idx;
@@ -392,9 +392,9 @@ static void process_fraction(char* float_string, int start_idx)
        token = *++src;
    }
         
-   //ÅÐ¶ÏÊÇ·ñÊÇ·Ç·¨µÄ¸¡µãÊý×ÖÃæÁ¿£¬´¦ÀíÍêÕý³£²¿·ÖµÄ¸¡µãÊýºóÈç¹ûºóÃæ²»ÊÇÕâÐ©×Ö·û
-   //µÄ»°£¬ÄÇÃ´Õâ¸ö¸¡µã×ÖÃæÁ¿ÊÇ·Ç·¨µÄ£¬Í¬Ê±Ò²ÄÜ´¦ÀíÉÏÃæ³öÏÖ·Ç·¨×Ö·ûµÄÇé¿ö£¬ÀýÈç
-   //"12.0a" ÕâÑùµÄ×ÖÃæÁ¿
+   //åˆ¤æ–­æ˜¯å¦æ˜¯éžæ³•çš„æµ®ç‚¹æ•°å­—é¢é‡ï¼Œå¤„ç†å®Œæ­£å¸¸éƒ¨åˆ†çš„æµ®ç‚¹æ•°åŽå¦‚æžœåŽé¢ä¸æ˜¯è¿™äº›å­—ç¬¦
+   //çš„è¯ï¼Œé‚£ä¹ˆè¿™ä¸ªæµ®ç‚¹å­—é¢é‡æ˜¯éžæ³•çš„ï¼ŒåŒæ—¶ä¹Ÿèƒ½å¤„ç†ä¸Šé¢å‡ºçŽ°éžæ³•å­—ç¬¦çš„æƒ…å†µï¼Œä¾‹å¦‚
+   //"12.0a" è¿™æ ·çš„å­—é¢é‡
    //printf("trailing charater of float literal '%c'\n", token);
    if (! (token == ',' || token == ';' || token == ' ')){
        printf("%d: bad float literal\n", line);
@@ -406,7 +406,7 @@ static void process_fraction(char* float_string, int start_idx)
 }
 
 
-//½«Ê®Áù½øÖÆµÄ×Ö·û×ª»¯³ÉÏàÓ¦µÄÊý×Ö
+//å°†åå…­è¿›åˆ¶çš„å­—ç¬¦è½¬åŒ–æˆç›¸åº”çš„æ•°å­—
 static int digitalize_hex_character(char ch)
 {
    if ((ch >= '0' && ch <= '9')){
